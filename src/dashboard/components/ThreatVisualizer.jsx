@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+
+import { useMemo, useState, useEffect } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -10,39 +11,6 @@ import {
   ShieldCheck,
   Waves,
 } from "lucide-react";
-
-const INITIAL_EVENTS = [
-  {
-    id: 1,
-    field: "Field 02",
-    type: "Sound deviation",
-    detail: "Audio measurements differed from the saved field reference.",
-    time: "Latest assessment",
-    level: "review",
-    evidence: "Measurement difference",
-    verified: false,
-  },
-  {
-    id: 2,
-    field: "Field 05",
-    type: "Sensor unavailable",
-    detail: "A sensor status needs checking before the field can be assessed.",
-    time: "Device status",
-    level: "urgent",
-    evidence: "Device status",
-    verified: false,
-  },
-  {
-    id: 3,
-    field: "Field 01",
-    type: "Routine observation",
-    detail: "No unresolved observation has been added to this example feed.",
-    time: "Field overview",
-    level: "normal",
-    evidence: "Routine status",
-    verified: true,
-  },
-];
 
 const STATUS = {
   normal: {
@@ -63,13 +31,23 @@ const STATUS = {
 };
 
 export default function ThreatVisualizer({
-  events = INITIAL_EVENTS,
+  events = [],
   onReview,
 }) {
   const [filter, setFilter] = useState("all");
-  const [expandedId, setExpandedId] = useState(1);
+  const [expandedId, setExpandedId] = useState(null);
+  const [reviewingId, setReviewingId] = useState(null);
 
-  const safeEvents = Array.isArray(events) ? events : INITIAL_EVENTS;
+  const safeEvents = Array.isArray(events) ? events : [];
+
+  useEffect(() => {
+    if (
+      expandedId !== null &&
+      !safeEvents.some((event) => event.id === expandedId)
+    ) {
+      setExpandedId(null);
+    }
+  }, [safeEvents, expandedId]);
 
   const counts = useMemo(
     () => ({
@@ -85,6 +63,33 @@ export default function ThreatVisualizer({
   );
 
   const needsReview = counts.review + counts.urgent;
+
+  const simulatedCount = safeEvents.filter(
+    (event) => event.simulated
+  ).length;
+
+  const badgeLabel =
+    safeEvents.length === 0
+      ? "No active events"
+      : simulatedCount === safeEvents.length
+        ? "Simulated data"
+        : simulatedCount > 0
+          ? "Mixed data"
+          : "Recorded events";
+
+  async function handleReview(event) {
+    if (!onReview || reviewingId === event.id) return;
+
+    setReviewingId(event.id);
+
+    try {
+      await onReview(event);
+    } catch (error) {
+      console.error("Threat review failed:", error);
+    } finally {
+      setReviewingId(null);
+    }
+  }
 
   return (
     <section className="threat-visualizer">
@@ -106,7 +111,7 @@ export default function ThreatVisualizer({
 
         <span className="tv-demo-badge">
           <span />
-          Illustrative data
+          {badgeLabel}
         </span>
       </header>
 
@@ -181,6 +186,7 @@ export default function ThreatVisualizer({
                   : 0}%
               </strong>
             </div>
+
             <div className="tv-meter-track">
               <span
                 style={{
@@ -192,6 +198,7 @@ export default function ThreatVisualizer({
                 }}
               />
             </div>
+
             <small>
               Share of listed items needing review. This is not a threat
               probability.
@@ -230,8 +237,8 @@ export default function ThreatVisualizer({
                     {key === "normal"
                       ? "Routine status; continue normal checks."
                       : key === "review"
-                      ? "Inspect the measurements and gather more evidence."
-                      : "Prioritize a human check; confirm before taking action."}
+                        ? "Inspect the measurements and gather more evidence."
+                        : "Prioritize a human check; confirm before taking action."}
                   </p>
                 </div>
               </div>
@@ -267,8 +274,11 @@ export default function ThreatVisualizer({
         {visibleEvents.length === 0 ? (
           <div className="tv-empty">
             <CheckCircle2 size={27} />
-            <strong>No items in this category</strong>
-            <p>Choose another filter to see other field statuses.</p>
+            <strong>No active threat events</strong>
+            <p>
+              No threat records are currently available. This does not mean
+              the farm is free from threats.
+            </p>
           </div>
         ) : (
           <div className="tv-event-list">
@@ -296,18 +306,22 @@ export default function ThreatVisualizer({
 
                     <span className="tv-event-main">
                       <span className="tv-event-title-row">
-                        <strong>{event.type}</strong>
-                        <span className="tv-status-badge">{status.label}</span>
+                        <strong>{event.type || "Threat alert"}</strong>
+                        <span className="tv-status-badge">
+                          {status.label}
+                        </span>
                       </span>
 
-                      <span className="tv-event-detail">{event.detail}</span>
+                      <span className="tv-event-detail">
+                        {event.detail || "Additional inspection is required."}
+                      </span>
 
                       <span className="tv-event-meta">
-                        <span>{event.field}</span>
+                        <span>{event.field || "Field not assigned"}</span>
                         <span>·</span>
                         <span>
                           <Clock3 size={13} />
-                          {event.time}
+                          {event.time || "Time unavailable"}
                         </span>
                       </span>
                     </span>
@@ -328,13 +342,20 @@ export default function ThreatVisualizer({
                       <div className="tv-evidence-row">
                         <span>Human verification</span>
                         <strong>
-                          {event.verified ? "Routine status" : "Still required"}
+                          {event.verified ? "Reviewed" : "Still required"}
+                        </strong>
+                      </div>
+
+                      <div className="tv-evidence-row">
+                        <span>Data source</span>
+                        <strong>
+                          {event.simulated ? "Simulated" : "Recorded"}
                         </strong>
                       </div>
 
                       <p className="tv-review-note">
-                        {event.level === "normal"
-                          ? "Continue routine checks. This status does not guarantee that the field is free from risk."
+                        {event.verified
+                          ? "This item has been marked as reviewed. Continue routine monitoring."
                           : "Inspect the field and relevant sensor information. Record what you actually observe before classifying the cause."}
                       </p>
 
@@ -342,10 +363,13 @@ export default function ThreatVisualizer({
                         <button
                           type="button"
                           className="tv-review-button"
-                          onClick={() => onReview(event)}
+                          disabled={reviewingId === event.id}
+                          onClick={() => handleReview(event)}
                         >
                           <Eye size={16} />
-                          Review this item
+                          {reviewingId === event.id
+                            ? "Recording review..."
+                            : "Review this item"}
                         </button>
                       )}
                     </div>
@@ -360,9 +384,9 @@ export default function ThreatVisualizer({
       <footer className="tv-footer">
         <ShieldCheck size={18} />
         <p>
-          This visualizer organizes status information. It does not independently
-          detect, diagnose, or confirm threats. Example items are illustrative
-          until connected to real FIELDZY observations and sensor data.
+          This visualizer organizes stored alert information. It does not
+          independently detect, diagnose, or confirm threats. Simulated
+          demonstration events are not real-world detections.
         </p>
       </footer>
     </section>

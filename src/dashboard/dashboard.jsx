@@ -236,6 +236,48 @@ function createTimestamp() {
 // --------------------------------------------------
 // MAIN DASHBOARD
 // --------------------------------------------------
+const SECTION_VISUALS = {
+  overview: {
+    image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1600",
+    title: "A clearer view of your farm",
+    description: "Monitor your fields and stay informed."
+  },
+  soil: {
+    image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1600",
+    title: "Understand your soil",
+    description: "Keep track of soil moisture and field conditions."
+  },
+  fields: {
+    image: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=1600",
+    title: "Every field matters",
+    description: "Keep your agricultural spaces connected."
+  },
+  warnings: {
+    image: "https://images.unsplash.com/photo-1501691223387-dd0500403074?w=1600",
+    title: "Stay ahead of changing conditions",
+    description: "Review warnings and emerging field risks."
+  },
+  observations: {
+    image: "https://images.unsplash.com/photo-1499529112087-3cb3b73cec95?w=1600",
+    title: "Observe before you act",
+    description: "Record field observations and supporting evidence."
+  },
+  acoustic: {
+    image: "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=1600",
+    title: "Listen to your surroundings",
+    description: "Explore acoustic activity in your fields."
+  },
+  network: {
+    image: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=1600",
+    title: "A connected farming network",
+    description: "Keep track of sensors and system connectivity."
+  },
+  plant: {
+    image: "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=1600",
+    title: "Look closer at plant health",
+    description: "Inspect crops and assess possible concerns."
+  }
+};
 
 export default function Dashboard({ onGoHome }) {
 const [soundFile, setSoundFile] = useState(null);
@@ -389,7 +431,7 @@ useEffect(() => {
     }
   : {}),
 
-        ...(observationsResult.data
+...(observationsResult.data
   ? {
       observations: (() => {
         const remoteObservations = observationsResult.data.map((row) => ({
@@ -401,8 +443,16 @@ useEffect(() => {
           category: row.category || "General",
           status: row.status || "Unverified",
           syncStatus: row.sync_status || "synced",
+
           evidenceGaps: row.evidence_gaps || [],
+          validation: row.validation || null,
           evidence: row.evidence || [],
+
+          // Evidence Debt review data
+          reviewStage: row.review_stage || "Open",
+          qualityChecks: row.quality_checks || {},
+          reviewHistory: row.review_history || [],
+
           nextAction: row.next_action || "",
           createdAt: row.created_at,
         }));
@@ -499,6 +549,8 @@ useEffect(() => {
 }, []);
 
   const [activeSection, setActiveSection] = useState("overview");
+  const activeVisual =
+  SECTION_VISUALS[activeSection] || SECTION_VISUALS.overview;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
   useEffect(() => {
@@ -801,6 +853,7 @@ async function deleteField(fieldId) {
   // OBSERVATIONS
   // ----------------------------------------------
 
+
 async function addObservation(observationData) {
   const title = String(observationData.title || "").trim();
 
@@ -811,7 +864,7 @@ async function addObservation(observationData) {
     };
   }
 
-  const selectedField = fields.find(
+  const selectedField = dashboardStateRef.current.fields.find(
     (field) => field.id === observationData.fieldId
   );
 
@@ -822,30 +875,66 @@ async function addObservation(observationData) {
     };
   }
 
+  // Preserve feature-specific evidence questions.
+  const suppliedGaps = Array.isArray(observationData.evidenceGaps)
+    ? observationData.evidenceGaps
+    : [];
+
+  const evidenceGaps = suppliedGaps.length
+    ? suppliedGaps.map((gap) => ({
+        id: gap.id || createId("gap"),
+        question:
+          typeof gap === "string"
+            ? gap
+            : gap.question || "Additional evidence is required.",
+        resolved: Boolean(
+          typeof gap === "object" && gap.resolved
+        ),
+      }))
+    : [
+        {
+          id: createId("gap"),
+          question:
+            "What independent evidence supports this observation?",
+          resolved: false,
+        },
+      ];
+
   const observation = {
     id: createId("observation"),
     fieldId: selectedField.id,
     fieldName: selectedField.name,
     title,
-    description: String(observationData.description || "").trim(),
+    description: String(
+      observationData.description || ""
+    ).trim(),
     category: observationData.category || "General",
+
+    // AI assessment never automatically means verified.
     status: "Unverified",
     syncStatus: "pending",
-    evidenceGaps: [
-      {
-        id: createId("gap"),
-        question: "What independent evidence supports this observation?",
-        resolved: false,
-      },
-    ],
-    evidence: [],
+
+    evidenceGaps,
+    evidence: Array.isArray(observationData.evidence)
+      ? observationData.evidence
+      : [],
+
+    // Keep the actual validation response.
+    validation: observationData.validation || null,
+
+    reviewStage: "Open",
+    qualityChecks: {},
+    reviewHistory: [],
+
     nextAction:
       String(observationData.nextAction || "").trim() ||
+      observationData.validation?.next_action ||
       "Collect additional evidence before drawing a conclusion.",
+
     createdAt: createTimestamp(),
   };
 
-  // 1. Save locally first
+  // Save locally first.
   updateDashboard((previous) => ({
     ...previous,
     observations: [
@@ -854,25 +943,31 @@ async function addObservation(observationData) {
     ],
   }));
 
-  // 2. Attempt database sync if internet is available
+  // Sync to Supabase when online.
   if (typeof navigator !== "undefined" && navigator.onLine) {
-    const { error } = await supabase.from("observations").upsert(
-      {
-        external_id: observation.id,
-        field_id: observation.fieldId,
-        field_name: observation.fieldName,
-        title: observation.title,
-        description: observation.description,
-        category: observation.category,
-        status: observation.status,
-        sync_status: "synced",
-        evidence_gaps: observation.evidenceGaps,
-        evidence: observation.evidence,
-        next_action: observation.nextAction,
-        created_at: observation.createdAt,
-      },
-      { onConflict: "external_id" }
-    );
+    const { error } = await supabase
+      .from("observations")
+      .upsert(
+        {
+          external_id: observation.id,
+          field_id: observation.fieldId,
+          field_name: observation.fieldName,
+          title: observation.title,
+          description: observation.description,
+          category: observation.category,
+          status: observation.status,
+          sync_status: "synced",
+          evidence_gaps: observation.evidenceGaps,
+          evidence: observation.evidence,
+          validation: observation.validation,
+          review_stage: observation.reviewStage,
+          quality_checks: observation.qualityChecks,
+          review_history: observation.reviewHistory,
+          next_action: observation.nextAction,
+          created_at: observation.createdAt,
+        },
+        { onConflict: "external_id" }
+      );
 
     if (!error) {
       const syncedObservation = {
@@ -883,7 +978,9 @@ async function addObservation(observationData) {
       updateDashboard((previous) => ({
         ...previous,
         observations: previous.observations.map((item) =>
-          item.id === observation.id ? syncedObservation : item
+          item.id === observation.id
+            ? syncedObservation
+            : item
         ),
       }));
 
@@ -899,13 +996,13 @@ async function addObservation(observationData) {
     console.error("Observation sync failed:", error.message);
   }
 
-  // 3. Keep it pending if sync was unsuccessful
   return {
     success: true,
     observation,
     message: "Observation saved locally. Sync is pending.",
   };
 }
+
 
 async function syncPendingObservations() {
   if (!navigator.onLine) {
@@ -929,6 +1026,7 @@ async function syncPendingObservations() {
   }
 
   const rows = pending.map((item) => ({
+    validation: item.validation || null,
     external_id: item.id,
     field_id: item.fieldId,
     field_name: item.fieldName,
@@ -939,6 +1037,12 @@ async function syncPendingObservations() {
     sync_status: "synced",
     evidence_gaps: item.evidenceGaps || [],
     evidence: item.evidence || [],
+
+    // NEW: Persistent Evidence Debt review data
+    review_stage: item.reviewStage || "Open",
+    quality_checks: item.qualityChecks || {},
+    review_history: item.reviewHistory || [],
+
     next_action: item.nextAction || "",
     created_at: item.createdAt,
   }));
@@ -1090,45 +1194,37 @@ async function updateObservation(observationId, changes) {
   const updatedObservation = {
     ...existingObservation,
     ...changes,
+
     id: existingObservation.id,
     fieldId: selectedField.id,
     fieldName: selectedField.name,
     title,
     description,
+
     evidence: existingObservation.evidence ?? [],
     evidenceGaps: existingObservation.evidenceGaps ?? [],
+
+    // Preserve Evidence Debt review data
+    reviewStage:
+      changes.reviewStage ??
+      existingObservation.reviewStage ??
+      "Open",
+
+    qualityChecks:
+      changes.qualityChecks ??
+      existingObservation.qualityChecks ??
+      {},
+
+    reviewHistory:
+      changes.reviewHistory ??
+      existingObservation.reviewHistory ??
+      [],
+
     createdAt: existingObservation.createdAt,
+    syncStatus: "pending",
   };
 
-  const { data, error } = await supabase
-    .from("observations")
-    .update({
-      field_id: updatedObservation.fieldId,
-      field_name: updatedObservation.fieldName,
-      title: updatedObservation.title,
-      description: updatedObservation.description,
-      category: updatedObservation.category,
-      status: updatedObservation.status,
-      sync_status: updatedObservation.syncStatus || "synced",
-      evidence_gaps: updatedObservation.evidenceGaps,
-      evidence: updatedObservation.evidence,
-      next_action: updatedObservation.nextAction || "",
-    })
-    .eq("external_id", observationId)
-    .select("external_id");
-
-  if (error || !data?.length) {
-    console.error(
-      "Observation update failed:",
-      error?.message || "No matching database record was updated."
-    );
-
-    return {
-      success: false,
-      message: "Could not save observation changes to the database.",
-    };
-  }
-
+  // 1. Save locally first
   updateDashboard((previous) => ({
     ...previous,
     observations: previous.observations.map((observation) =>
@@ -1138,11 +1234,69 @@ async function updateObservation(observationId, changes) {
     ),
   }));
 
-  addLog(`Observation updated: ${title}`, "success");
+  // 2. Attempt Supabase sync
+  if (typeof navigator !== "undefined" && navigator.onLine) {
+    try {
+      const { data, error } = await supabase
+        .from("observations")
+        .update({
+          field_id: updatedObservation.fieldId,
+          field_name: updatedObservation.fieldName,
+          title: updatedObservation.title,
+          description: updatedObservation.description,
+          category: updatedObservation.category,
+          status: updatedObservation.status,
+          sync_status: "synced",
+          evidence_gaps: updatedObservation.evidenceGaps,
+          evidence: updatedObservation.evidence,
+
+          // NEW: Save review workflow data
+          review_stage: updatedObservation.reviewStage,
+          quality_checks: updatedObservation.qualityChecks,
+          review_history: updatedObservation.reviewHistory,
+
+          next_action: updatedObservation.nextAction || "",
+        })
+        .eq("external_id", observationId)
+        .select("external_id");
+
+      if (error || !data?.length) {
+        throw error || new Error("No matching database record found.");
+      }
+
+      const syncedObservation = {
+        ...updatedObservation,
+        syncStatus: "synced",
+      };
+
+      updateDashboard((previous) => ({
+        ...previous,
+        observations: previous.observations.map((observation) =>
+          observation.id === observationId
+            ? syncedObservation
+            : observation
+        ),
+      }));
+
+      addLog(`Observation updated: ${title}`, "success");
+
+      return {
+        success: true,
+        observation: syncedObservation,
+        message: "Observation updated and synced.",
+      };
+    } catch (error) {
+      console.error("Observation update sync failed:", error);
+    }
+  }
+
+  // 3. Keep locally saved changes pending
+  addLog(`Observation updated locally: ${title}`, "info");
 
   return {
     success: true,
     observation: updatedObservation,
+    message: "Changes saved locally. Database sync is pending.",
   };
 }
 
@@ -1594,7 +1748,20 @@ async function saveBaseline(soundData) {
   // NEIGHBOUR ALERT DEMONSTRATION
   // ----------------------------------------------
 
-  async function receiveDemoNeighbourAlert(alertData = {}) {
+
+async function receiveDemoNeighbourAlert(alertData = {}) {
+  const selectedFieldId =
+    alertData.fieldId ||
+    dashboardStateRef.current.fields?.[0]?.id ||
+    null;
+
+  if (!selectedFieldId) {
+    return {
+      success: false,
+      message: "A field must be registered before receiving a neighbour alert.",
+    };
+  }
+
   const alert = {
     id: createId("neighbour-demo"),
     originNode: alertData.originNode || "Farm Node Demo",
@@ -1603,9 +1770,11 @@ async function saveBaseline(soundData) {
     sourceReportId:
       alertData.sourceReportId || createId("source-report"),
     receivedAt: createTimestamp(),
+    fieldId: selectedFieldId,
     simulated: true,
   };
 
+  // 1. Save the neighbour alert.
   const { error } = await supabase
     .from("neighbour_alerts")
     .upsert(
@@ -1631,6 +1800,7 @@ async function saveBaseline(soundData) {
     };
   }
 
+  // 2. Update the neighbour alert dashboard.
   updateDashboard((previous) => ({
     ...previous,
     neighbourAlerts: [
@@ -1641,17 +1811,225 @@ async function saveBaseline(soundData) {
     ],
   }));
 
-  addLog(
-    `SIMULATED neighbour alert from ${alert.originNode}. No real network packet was received.`,
-    "warning"
-  );
+  // 3. Validate the report's evidence.
+  let validation = {
+    status: "insufficient",
+    missing_evidence: [
+      {
+        key: "independent_evidence",
+        question: "Is there independent evidence supporting this neighbour report?",
+      },
+    ],
+    expert_confirmed: false,
+  };
 
-  return { success: true, alert };
+  try {
+    const response = await fetch(
+      "http://127.0.0.1:8001/validate-evidence",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          feature: "observation",
+          model_result: {},
+          context: {
+            description: alert.title,
+            independent_evidence: null,
+          },
+          evidence: [
+            {
+              type: "neighbour_alert",
+              source: alert.originNode,
+              source_report_id: alert.sourceReportId,
+              received_at: alert.receivedAt,
+              simulated: true,
+            },
+          ],
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Evidence validation failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    validation = data.validation || data;
+  } catch (validationError) {
+    console.error("Neighbour alert validation failed:", validationError);
+    addLog(
+      "Neighbour alert saved, but evidence validation could not be completed.",
+      "warning"
+    );
+  }
+
+  // 4. Convert missing evidence into Evidence Debt gaps.
+  const evidenceGaps = (
+    validation.missing_evidence || []
+  ).map((item) => ({
+    key: typeof item === "string" ? item : item.key,
+    question:
+      typeof item === "string"
+        ? item
+        : item.question || "Additional independent evidence is required.",
+    resolved: false,
+  }));
+
+  // 5. Create the corresponding observation.
+  try {
+    const observationResult = await addObservation({
+      fieldId: selectedFieldId,
+      category: "Neighbour Alert",
+      title: `Neighbour report: ${alert.title}`,
+      description:
+        `A ${alert.simulated ? "simulated " : ""}report was received from ${alert.originNode}. ` +
+        "The report has not been independently corroborated.",
+      evidence: [
+        {
+          type: "neighbour_alert",
+          source: alert.originNode,
+          sourceReportId: alert.sourceReportId,
+          neighbourAlertId: alert.id,
+          simulated: alert.simulated,
+          receivedAt: alert.receivedAt,
+        },
+      ],
+      evidenceGaps,
+      validation,
+      nextAction:
+        "Seek independent field evidence and verify the report before taking action.",
+    });
+
+    if (observationResult?.success === false) {
+      throw new Error(
+        observationResult.message || "Could not create the observation."
+      );
+    }
+
+    addLog(
+      `Neighbour alert converted into an unverified field observation: ${alert.title}.`,
+      "warning"
+    );
+
+    return {
+      success: true,
+      alert,
+      validation,
+      observationResult,
+    };
+  } catch (observationError) {
+    console.error(
+      "Failed to create neighbour alert observation:",
+      observationError
+    );
+
+    addLog(
+      "Neighbour alert was saved, but its Evidence Debt observation could not be created.",
+      "error"
+    );
+
+    return {
+      success: false,
+      alert,
+      message: "Alert saved, but observation creation failed.",
+    };
+  }
 }
+
 
   // ----------------------------------------------
   // SHARED PROPS
   // ----------------------------------------------
+
+  async function updateObservationReview(observationId, changes) {
+  const existingObservation = observations.find(
+    (item) => item.id === observationId
+  );
+
+  if (!existingObservation) {
+    return {
+      success: false,
+      message: "Observation not found.",
+    };
+  }
+
+  const updatedObservation = {
+    ...existingObservation,
+
+    reviewStage:
+      changes.reviewStage ??
+      existingObservation.reviewStage ??
+      "Open",
+
+    qualityChecks:
+      changes.qualityChecks ??
+      existingObservation.qualityChecks ??
+      {},
+
+    reviewHistory:
+      changes.reviewHistory ??
+      existingObservation.reviewHistory ??
+      [],
+
+    syncStatus: "pending",
+  };
+
+  // 1. Save review changes locally
+  updateDashboard((previous) => ({
+    ...previous,
+    observations: previous.observations.map((item) =>
+      item.id === observationId ? updatedObservation : item
+    ),
+  }));
+
+  // 2. Try syncing to Supabase
+  if (typeof navigator !== "undefined" && navigator.onLine) {
+    try {
+      const { data, error } = await supabase
+        .from("observations")
+        .update({
+          review_stage: updatedObservation.reviewStage,
+          quality_checks: updatedObservation.qualityChecks,
+          review_history: updatedObservation.reviewHistory,
+          sync_status: "synced",
+        })
+        .eq("external_id", observationId)
+        .select("external_id");
+
+      if (error || !data?.length) {
+        throw error || new Error("Observation not found in database.");
+      }
+
+      const syncedObservation = {
+        ...updatedObservation,
+        syncStatus: "synced",
+      };
+
+      updateDashboard((previous) => ({
+        ...previous,
+        observations: previous.observations.map((item) =>
+          item.id === observationId ? syncedObservation : item
+        ),
+      }));
+
+      return {
+        success: true,
+        observation: syncedObservation,
+        message: "Review progress saved and synced.",
+      };
+    } catch (error) {
+      console.error("Review update sync failed:", error);
+    }
+  }
+
+  return {
+    success: true,
+    observation: updatedObservation,
+    message: "Review progress saved locally. Sync is pending.",
+  };
+}
 
   const sharedData = {
     fields,
@@ -1679,6 +2057,7 @@ async function saveBaseline(soundData) {
     clearThreat,
     saveBaseline,
     updateObservation,
+    updateObservationReview,
     setWhisperLevel,
     receiveDemoNeighbourAlert,
     addLog,
@@ -1721,8 +2100,8 @@ async function saveBaseline(soundData) {
         case "soil":
   return <SoilMoisture {...sharedData} />;
 
-  case "plant":
-  return <PlantDiseaseDetection />;
+case "plant":
+  return <PlantDiseaseDetection {...sharedData} />;
 
       case "overview":
       default:
@@ -1871,6 +2250,20 @@ async function saveBaseline(soundData) {
             LOCAL DASHBOARD
           </div>
         </div>
+
+        <section className="dashboard-photo-banner">
+  <img
+    src={activeVisual.image}
+    alt={activeVisual.title}
+    key={activeSection}
+  />
+
+  <div className="dashboard-photo-overlay">
+    <span>FIELDZY / FIELD INSIGHTS</span>
+    <h2>{activeVisual.title}</h2>
+    <p>{activeVisual.description}</p>
+  </div>
+</section>
 
         {renderActiveSection()}
         <section className="sound-analysis-panel">

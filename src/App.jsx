@@ -183,59 +183,274 @@ export default function App() {
       </section>
 
       {/* Features */}
-      <section className="features-section" id="features">
-        <div className="section-intro" id="about">
-          <span className="section-eyebrow">OUR VISION</span>
+      {/* Farmer story — photographic section */}
+      <section className="farmer-story" id="about">
+        <div className="farmer-story-overlay" />
+
+        <div className="farmer-story-content">
+          <span className="landing-eyebrow">
+            ROOTED IN REAL FARMING
+          </span>
 
           <h2>
-            Because every field
+            Every harvest
             <br />
-            <span>has a story to protect.</span>
+            begins with a
+            <br />
+            <span>field worth protecting.</span>
           </h2>
 
           <p>
-            FIELDZY explores how early warnings, evidence-aware
-            alerts, and offline-first technology can support
-            more resilient farming communities.
+            Behind every crop is a farmer, a season of hard work,
+            and a livelihood worth protecting. FIELDZY brings
+            agricultural observations and intelligent tools
+            together to support better-informed decisions.
+          </p>
+
+          <a href="#vision" className="story-link">
+            Discover our approach
+            <ArrowUpRight size={18} />
+          </a>
+        </div>
+
+        <div className="farmer-story-caption">
+          <Leaf size={16} />
+          <span>Technology with its roots in the field.</span>
+        </div>
+      </section>
+
+      {/* The problem and our vision */}
+      <section className="fieldzy-intro-section" id="vision">
+        <div className="fieldzy-intro-heading">
+          <span className="landing-eyebrow">WHY FIELDZY EXISTS</span>
+
+          <h2>
+            Farming is complex.
+            <br />
+            <span>Understanding it shouldn't be.</span>
+          </h2>
+
+          <p>
+            Field conditions change. Crop symptoms can be uncertain.
+            Measurements need context. Farmers deserve tools that
+            bring information together without pretending that
+            every prediction is a proven fact.
           </p>
         </div>
 
-        <div className="feature-grid">
-          <article className="feature-item">
-            <div className="feature-icon">
-              <Sprout size={23} />
-            </div>
-            <h3>Understand your fields</h3>
+        <div className="fieldzy-values-grid">
+          <article className="fieldzy-value-card">
+            <span className="value-number">01</span>
+            <Sprout size={27} />
+            <h3>Understand</h3>
             <p>
-              Bring field observations and environmental
-              information together in one place.
+              Bring field information, observations and crop
+              health predictions into one organised workspace.
             </p>
           </article>
 
-          <article className="feature-item">
-            <div className="feature-icon">
-              <ShieldCheck size={23} />
-            </div>
-            <h3>Verify before acting</h3>
+          <article className="fieldzy-value-card">
+            <span className="value-number">02</span>
+            <ShieldCheck size={27} />
+            <h3>Question</h3>
             <p>
-              Keep potential threats distinct from verified
-              observations, with evidence clearly tracked.
+              Identify missing, conflicting and unverified
+              evidence before relying on an assessment.
             </p>
           </article>
 
-          <article className="feature-item">
-            <div className="feature-icon">
-              <Wifi size={23} />
-            </div>
-            <h3>Designed for weak signals</h3>
+          <article className="fieldzy-value-card">
+            <span className="value-number">03</span>
+            <Wifi size={27} />
+            <h3>Connect</h3>
             <p>
-              Explore an offline-first approach to keeping
-              essential field information accessible.
+              Explore a more connected way to organise field
+              information, observations and agricultural insights.
             </p>
           </article>
         </div>
       </section>
 
+      {/* How FIELDZY works */}
+      <section className="fieldzy-process-section">
+        <div className="fieldzy-process-image">
+          <img
+            src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1600"
+            alt="Farmer observing crops in an agricultural field"
+            loading="lazy"
+          />
+
+          <div className="process-image-overlay">
+            <span>FROM FIELD TO INSIGHT</span>
+            <h2>
+              Better information.
+              <br />
+              More informed decisions.
+            </h2>
+          </div>
+        </div>
+
+        <div className="fieldzy-process-content">
+          <span className="landing-eyebrow">HOW IT WORKS</span>
+
+          <h2>
+            A clearer picture
+            <br />
+            of your fields.
+          </h2>
+
+          <div className="process-step">
+            <span>01</span>
+            <div>
+              <h3>Collect field evidence</h3>
+              <p>
+                Record field observations, soil readings and
+                plant images in one place.
+              </p>
+            </div>
+          </div>
+
+          <div className="process-step">
+            <span>02</span>
+            <div>
+              <h3>Analyse available information</h3>
+              <p>
+                Use plant disease model predictions and
+                field assessment tools to organise the evidence.
+              </p>
+            </div>
+          </div>
+
+          <div className="process-step">
+            <span>03</span>
+            <div>
+              <h3>Review before acting</h3>
+              <p>
+                Examine missing evidence, conflicting records
+                and verification limitations before making decisions.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FIELDZY capabilities */}
+      <section className="fieldzy-capabilities-section" id="features">
+        <div className="capabilities-heading">
+          <span className="landing-eyebrow">EXPLORE FIELDZY</span>
+
+          <h2>
+            Everything begins
+            <br />
+            <span>with understanding.</span>
+          </h2>
+
+          <p>
+            A collection of agricultural tools designed to
+            bring field information into one place.
+          </p>
+        </div>
+
+        <div className="fieldzy-capabilities-grid">
+          <article className="capability-card capability-large">
+            <div className="capability-topline">
+              <span>01 / CROP INTELLIGENCE</span>
+              <Leaf size={21} />
+            </div>
+
+            <h3>Plant health insights</h3>
+
+            <p>
+              Analyse uploaded plant images using a trained
+              prediction model. Review the model's output
+              and confidence without confusing a prediction
+              with a confirmed diagnosis.
+            </p>
+
+            <div className="capability-decoration">
+              <Sprout size={74} strokeWidth={0.8} />
+            </div>
+          </article>
+
+          <article className="capability-card">
+            <div className="capability-topline">
+              <span>02 / FIELD MONITORING</span>
+              <Sprout size={21} />
+            </div>
+
+            <h3>Soil moisture</h3>
+
+            <p>
+              Record and review soil moisture readings.
+              Demonstration readings are clearly identified
+              as simulated.
+            </p>
+          </article>
+
+          <article className="capability-card">
+            <div className="capability-topline">
+              <span>03 / EVIDENCE INTELLIGENCE</span>
+              <ShieldCheck size={21} />
+            </div>
+
+            <h3>Evidence Debt</h3>
+
+            <p>
+              Track unresolved evidence gaps, unverified
+              observations and information that needs review.
+            </p>
+          </article>
+
+          <article className="capability-card capability-wide">
+            <div>
+              <div className="capability-topline">
+                <span>04 / UNIFIED FIELD VIEW</span>
+                <ArrowUpRight size={21} />
+              </div>
+
+              <h3>One assessment. A broader picture.</h3>
+
+              <p>
+                Bring available plant predictions, soil information
+                and field observations into a single assessment
+                with clearly stated limitations.
+              </p>
+            </div>
+
+            <div className="capability-decoration">
+              <ShieldCheck size={65} strokeWidth={0.9} />
+            </div>
+          </article>
+        </div>
+      </section>
+
+      {/* Final call to action */}
+      <section className="fieldzy-final-section">
+        <div className="final-section-decoration">
+          <Sprout size={100} strokeWidth={0.7} />
+        </div>
+
+        <span className="landing-eyebrow">THE FIELDZY EXPERIENCE</span>
+
+        <h2>
+          Smarter fields.
+          <br />
+          <span>Safer harvests.</span>
+        </h2>
+
+        <p>
+          Explore a new way to bring agricultural information,
+          evidence and insights together.
+        </p>
+
+        <button
+          className="fieldzy-final-button"
+          onClick={() => setShowDashboard(true)}
+        >
+          Explore the FIELDZY dashboard
+          <ArrowUpRight size={18} />
+        </button>
+      </section>
       {/* Footer */}
       <footer className="landing-footer">
         <a className="footer-brand" href="#home">

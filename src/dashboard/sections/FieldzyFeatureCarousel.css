@@ -1,69 +1,72 @@
-/* =========================================
-   FIELDZY FEATURE CAROUSEL
-   Harvest Sand theme
-========================================= */
+
+/* =====================================================
+   FIELDZY — AGRICULTURAL FEATURE CAROUSEL
+   Full-bleed photographic cards
+===================================================== */
 
 .fieldzy-carousel {
-  --fieldzy-green: #65a879;
-  --fieldzy-ink: #f0f2ed;
-  --fieldzy-muted: #b0b7b0;
-  --fieldzy-border: #414743;
+  --fieldzy-green: #b7d09d;
+  --fieldzy-ink: #f8f7ef;
+  --fieldzy-muted: #e0e4d7;
 
   width: 100%;
-  margin: 22px 0 28px;
-  padding: 22px;
+  margin: 24px 0 30px;
+  padding: 23px;
   box-sizing: border-box;
 
-  background:#d7dbd0;
-  border: 1px solid var(--fieldzy-border);
-  border-radius: 20px;
+  background: #e8e8d9;
+  border: 1px solid #d5d8c8;
+  border-radius: 21px;
   overflow: hidden;
 }
+
 /* Heading */
 
 .fieldzy-carousel-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-
-  margin-bottom: 20px;
+  gap: 18px;
+  margin-bottom: 21px;
 }
 
 .fieldzy-eyebrow {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
 
-  color: var(--fieldzy-green);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 1.5px;
+  color: #72805b;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
 }
 
 .fieldzy-carousel-heading h2 {
-  margin: 0 0 5px;
+  margin: 0 0 6px;
 
-  color: var(--fieldzy-ink);
-  font-size: 23px;
-  font-weight: 800;
-  letter-spacing: -0.7px;
+  color: #304a35;
+  font-family: Garamond, serif;
+  font-size: 29px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
 }
 
 .fieldzy-carousel-heading p {
   margin: 0;
 
-  color: var(--fieldzy-muted);
-  font-size: 13px;
-  line-height: 1.5;
+  color: #737968;
+  font-family: Garamond, serif;
+  font-size: 16px;
+  line-height: 1.3;
 }
 
 .fieldzy-carousel-label {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
 
-  color: var(--fieldzy-muted);
+  color: #52694a;
   font-size: 12px;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -72,16 +75,17 @@
   height: 8px;
   flex-shrink: 0;
 
-  background: #4c9864;
+  background: #638b51;
   border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(99, 139, 81, 0.12);
 }
 
-/* Scrolling viewport */
+/* Carousel viewport */
 
 .fieldzy-carousel-window {
   width: 100%;
   overflow: hidden;
-  padding: 3px 0 9px;
+  padding: 4px 0 9px;
 }
 
 /* Moving track */
@@ -89,108 +93,250 @@
 .fieldzy-carousel-track {
   display: flex;
   align-items: stretch;
-  gap: 16px;
+  gap: 17px;
   width: max-content;
 
   animation: fieldzy-feature-scroll 42s linear infinite;
   will-change: transform;
 }
 
-/* Pause while hovering or interacting */
-
-.fieldzy-feature-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  flex: 0 0 250px;
-  width: 250px;
-  min-height: 188px;
-  padding: 19px;
-  box-sizing: border-box;
-  text-align: left;
-  font-family: inherit;
-
-  color: #f0f2ed;
-background: #707873;
-border: 1px solid #858d87;
-  border-radius: 16px;
-
-  cursor: pointer;
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+.fieldzy-carousel.is-paused .fieldzy-carousel-track {
+  animation-play-state: paused;
 }
 
+/* Full photographic card */
+
+.fieldzy-feature-card {
+  position: relative;
+  display: block;
+  flex: 0 0 285px;
+
+  width: 285px;
+  height: 310px;
+  min-height: 310px;
+
+  padding: 0;
+  overflow: hidden;
+  isolation: isolate;
+
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 17px;
+
+  background: #52664a;
+  color: #fff;
+
+  text-align: left;
+  font-family: Garamond, serif;
+
+  cursor: pointer;
+
+  box-shadow: 0 7px 19px rgba(37, 48, 32, 0.13);
+
+  transition:
+    transform 280ms ease,
+    box-shadow 280ms ease,
+    border-color 280ms ease;
+}
+
+/* Individual agricultural photograph */
+
+.fieldzy-feature-image {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  object-position: center;
+
+  transform: scale(1);
+  transition: transform 750ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Dark natural overlay */
+
+.fieldzy-feature-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(16, 28, 19, 0.28) 0%,
+      rgba(19, 31, 20, 0.04) 34%,
+      rgba(15, 27, 18, 0.48) 64%,
+      rgba(12, 24, 15, 0.91) 100%
+    );
+
+  transition: background 300ms ease;
+}
+
+/* Card hover */
+
 .fieldzy-feature-card:hover {
-  border-color: #65a879;
-  box-shadow: 0 8px 22px rgb(0 0 0 / 20%);
-  transform: translateY(-3px);
+  transform: translateY(-5px);
+
+  border-color: rgba(222, 235, 204, 0.8);
+
+  box-shadow:
+    0 15px 32px rgba(32, 48, 29, 0.22),
+    0 3px 8px rgba(32, 48, 29, 0.12);
+}
+
+.fieldzy-feature-card:hover .fieldzy-feature-image {
+  transform: scale(1.09);
 }
 
 .fieldzy-feature-card:focus-visible {
-  outline: 3px solid #78a985;
-  outline-offset: 3px;
+  outline: 3px solid #8cae72;
+  outline-offset: 4px;
 }
 
-/* Icon and arrow */
+/* Content layer */
+
+.fieldzy-feature-content {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  padding: 19px;
+  box-sizing: border-box;
+}
+
+/* Top category and icon */
 
 .fieldzy-feature-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
+}
 
-  width: 100%;
-  margin-bottom: 15px;
+.fieldzy-feature-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  padding: 8px 10px;
+
+  color: #f3f4e9;
+  background: rgba(24, 38, 26, 0.48);
+  border: 1px solid rgba(255, 255, 255, 0.21);
+  border-radius: 30px;
+
+  font-family: Garamond, serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.fieldzy-feature-category-dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+
+  background: #c4d99d;
+  border-radius: 50%;
 }
 
 .fieldzy-feature-icon {
   display: grid;
   place-items: center;
-  width: 43px;
-  height: 43px;
+
+  width: 42px;
+  height: 42px;
   flex-shrink: 0;
 
-  color: #83c995;
-  background: #263f30;
-  border-radius: 12px;
+  color: #f5f5e9;
+  background: rgba(29, 45, 29, 0.53);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 13px;
+
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+}
+
+/* Bottom typography */
+
+.fieldzy-feature-bottom {
+  width: 100%;
+}
+
+.fieldzy-feature-card h3 {
+  margin: 0 0 8px;
+
+  color: #fffdf3;
+  font-family: Garamond, serif;
+  font-size: 29px;
+  font-weight: 600;
+  letter-spacing: -0.35px;
+  line-height: 1.05;
+
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.fieldzy-feature-description {
+  max-width: 235px;
+  min-height: 39px;
+  margin: 0 0 14px;
+
+  color: rgba(250, 250, 240, 0.87);
+  font-family: Garamond, serif;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.fieldzy-feature-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+.fieldzy-feature-detail {
+  color: #d5e3be;
+  font-family: Garamond, serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 .fieldzy-feature-arrow {
-  color: #899586;
-  transition: transform 180ms ease;
+  display: grid;
+  place-items: center;
+
+  width: 33px;
+  height: 33px;
+  flex-shrink: 0;
+
+  color: #f7f6ed;
+  background: rgba(255, 255, 255, 0.13);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 50%;
+
+  transition:
+    transform 220ms ease,
+    background 220ms ease;
 }
 
 .fieldzy-feature-card:hover .fieldzy-feature-arrow {
   transform: translate(3px, -3px);
+  background: rgba(255, 255, 255, 0.25);
 }
 
-/* Text */
-
-.fieldzy-feature-card h3 {
-  margin: 0 0 7px;
-
-  color: var(--fieldzy-ink);
-  font-size: 15px;
-  font-weight: 750;
-  letter-spacing: -0.25px;
-  line-height: 1.4;
-}
-
-.fieldzy-feature-description {
-  margin: 0 0 15px;
-
-  color: var(--fieldzy-muted);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.fieldzy-feature-detail {
-  margin-top: auto;
-
-  color: var(--fieldzy-green);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-/* Seamless loop: move by the width of one set of cards */
+/* Continuous scrolling */
 
 @keyframes fieldzy-feature-scroll {
   from {
@@ -202,36 +348,14 @@ border: 1px solid #858d87;
   }
 }
 
-/* Tablet and mobile */
+/* Tablet */
 
-@media (max-width: 600px) {
-  .fieldzy-carousel {
-    margin: 18px 0 24px;
-    padding: 16px;
-    border-radius: 16px;
-  }
-
-  .fieldzy-carousel-heading {
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .fieldzy-carousel-heading h2 {
-    font-size: 20px;
-  }
-
-  .fieldzy-carousel-heading p {
-    font-size: 12px;
-  }
-
-  .fieldzy-carousel-label {
-    font-size: 10px;
-  }
-
+@media (max-width: 900px) {
   .fieldzy-feature-card {
-    flex-basis: 225px;
-    width: 225px;
-    min-height: 180px;
+    flex-basis: 265px;
+    width: 265px;
+    height: 295px;
+    min-height: 295px;
   }
 
   .fieldzy-carousel-track {
@@ -239,7 +363,50 @@ border: 1px solid #858d87;
   }
 }
 
-/* Respect reduced-motion preferences */
+/* Mobile */
+
+@media (max-width: 600px) {
+  .fieldzy-carousel {
+    margin: 18px 0 23px;
+    padding: 15px;
+    border-radius: 17px;
+  }
+
+  .fieldzy-carousel-heading {
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .fieldzy-carousel-heading h2 {
+    font-size: 25px;
+  }
+
+  .fieldzy-carousel-heading p {
+    font-size: 14px;
+  }
+
+  .fieldzy-carousel-label {
+    font-size: 10px;
+  }
+
+  .fieldzy-feature-card {
+    flex-basis: 245px;
+    width: 245px;
+    height: 285px;
+    min-height: 285px;
+  }
+
+  .fieldzy-feature-card h3 {
+    font-size: 27px;
+  }
+
+  .fieldzy-carousel-track {
+    animation-duration: 50s;
+  }
+}
+
+/* Reduced motion accessibility */
 
 @media (prefers-reduced-motion: reduce) {
   .fieldzy-carousel-track {
@@ -250,16 +417,10 @@ border: 1px solid #858d87;
   .fieldzy-carousel-window {
     overflow-x: auto;
   }
-}
-.fieldzy-feature-arrow {
-  color: #a4ada5;
-  transition: transform 180ms ease;
-}
 
-.fieldzy-feature-card:hover .fieldzy-feature-arrow {
-  transform: translate(3px, -3px);
-}
-
-.fieldzy-live-dot {
-  background: #65a879;
+  .fieldzy-feature-image,
+  .fieldzy-feature-card,
+  .fieldzy-feature-arrow {
+    transition: none;
+  }
 }

@@ -1,3 +1,5 @@
+import { useState } from "react";
+import EvidenceDebtMeter from "../components/EvidenceDebtMeter";
 import WeatherCard from "./WeatherCard";
 
 import {
@@ -44,6 +46,12 @@ function getPriority(observation) {
 }
 
 export default function Overview({
+  triggerDemoThreat,
+  addEvidence,
+  addObservation,
+  ThreatVisualizer,
+  updateObservationReview,
+  updateVerification,
   fields = [],
   observations = [],
   evidenceHistory = [],
@@ -56,12 +64,226 @@ export default function Overview({
   unverifiedCount = 0,
   onNavigate = () => {},
 }) {
+
+
   const totalFields = fields.length;
   const totalObservations = observations.length;
+  
+ const [aiAssessment, setAiAssessment] = useState(null);
+const [summaryLoading, setSummaryLoading] = useState(false);
+const [summaryError, setSummaryError] = useState("");
+const [summaryGeneratedAt, setSummaryGeneratedAt] = useState(null);
 
-  const verifiedCount = observations.filter((observation) =>
-    ["Corroborated", "Expert-confirmed"].includes(observation.status)
-  ).length;
+async function generateFieldSummary() {
+  setSummaryLoading(true);
+  setSummaryError("");
+
+  try {
+    // Collect evidence already attached to saved observations.
+    const featureEvidence = observations.flatMap((observation) =>
+      (Array.isArray(observation.evidence) ? observation.evidence : []).map(
+        (item) => ({
+          ...item,
+          fieldId: observation.fieldId,
+          field_id: observation.fieldId,
+          fieldName: observation.fieldName,
+          observationId: observation.id,
+          observationTitle: observation.title,
+          observationStatus: observation.status || "Unverified",
+          observationCreatedAt: observation.createdAt,
+        })
+      )
+    );
+
+    // Include the current threat only with its actual simulation status.
+    if (threat) {
+      featureEvidence.push({
+        type: "threat_alert",
+        source: threat.source || "FIELDZY threat record",
+        title: threat.title,
+        fieldId: threat.fieldId,
+        field_id: threat.fieldId,
+        status: threat.status || "Unverified",
+        simulated: Boolean(threat.simulated),
+        timestamp: threat.timestamp || null,
+        verificationStatus: threat.simulated
+          ? "Simulated"
+          : "Unverified",
+      });
+    }
+
+    const payload = {
+      fields: fields.map((field) => ({
+        id: field.id,
+        name: field.name,
+        crop_type: field.crop || field.crop_type || null,
+        area: field.area ?? null,
+        status: field.status || null,
+      })),
+
+      observations: observations.map((observation) => ({
+        id: observation.id,
+        field_id: observation.fieldId,
+        field_name: observation.fieldName,
+        title: observation.title,
+        description: observation.description,
+        category: observation.category,
+        status: observation.status || "Unverified",
+        evidence: observation.evidence || [],
+        evidence_gaps: observation.evidenceGaps || [],
+        validation: observation.validation || null,
+        created_at: observation.createdAt || null,
+      })),
+
+      evidence_debt: {
+        score: evidenceDebt,
+        unresolved_evidence_count: unresolvedEvidenceCount,
+        unverified_record_count: unverifiedCount,
+        calculation_source: "FIELDZY dashboard evidence calculation",
+      },
+
+      feature_evidence: featureEvidence,
+    };
+
+    const response = await fetch(
+      "http://127.0.0.1:8001/field-health-summary",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.detail || "Could not generate the agricultural assessment."
+      );
+    }
+
+if (!data.assessment || typeof data.assessment !== "object") {
+  throw new Error("The backend did not return a structured assessment.");
+}
+
+setAiAssessment(data.assessment);
+setSummaryGeneratedAt(new Date().toISOString());
+  } catch (error) {
+    console.error("FIELDZY field assessment error:", error);
+    setSummaryError(error.message || "AI summary generation failed.");
+  } finally {
+    setSummaryLoading(false);
+  }
+}
+  async function handleThreatReview(event) {
+  if (typeof addObservation !== "function") {
+    window.alert("Observation saving is not connected.");
+    return;
+  }
+
+  if (!event.fieldId) {
+    window.alert("This alert has no assigned field. Assign a field first.");
+    return;
+  }
+
+  // Avoid creating the same threat observation twice.
+  const alreadyAdded = observations.some((observation) =>
+    (observation.evidence || []).some(
+      (item) => item.sourceThreatId === event.id
+    )
+  );
+
+  if (alreadyAdded) {
+    window.alert("This threat already has an observation in FIELDZY.");
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      "http://127.0.0.1:8001/validate-evidence",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          feature: "observation",
+          model_result: {},
+          context: {
+            description: event.detail || event.type,
+            independent_evidence: null,
+          },
+          evidence: [],
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.detail || data.error || "Evidence validation failed."
+      );
+    }
+
+    const validation = data.validation || data;
+
+    const missingEvidence = validation.missing_evidence || [];
+
+    const evidenceGaps = missingEvidence.map((gap) => {
+      if (typeof gap === "string") {
+        return {
+          question: gap,
+          resolved: false,
+        };
+      }
+
+      return {
+        key: gap.key,
+        question: gap.question || gap.key || "Additional evidence required",
+        resolved: false,
+      };
+    });
+
+    const saveResult = await addObservation({
+      fieldId: event.fieldId,
+      category: "Threat Review",
+      title: `${event.simulated ? "[SIMULATED] " : ""}${event.type}`,
+      description: event.detail || "Threat alert requires investigation.",
+      evidence: [
+        {
+          type: "threat_alert",
+          source: event.simulated
+            ? "Simulated demonstration alert"
+            : "Recorded FIELDZY alert",
+          sourceThreatId: event.id,
+          simulated: Boolean(event.simulated),
+          timestamp: new Date().toISOString(),
+        },
+      ],
+      evidenceGaps,
+      validation,
+      nextAction:
+        validation.next_action ||
+        "Inspect the field and collect independent supporting evidence.",
+    });
+
+    if (saveResult?.success === false) {
+      throw new Error(
+        saveResult.message || "Could not save the threat observation."
+      );
+    }
+
+    window.alert(
+      "Threat review submitted. Check the Evidence Debt Meter and Priority Queue."
+    );
+  } catch (error) {
+    console.error("Threat review failed:", error);
+    window.alert(error.message || "Threat review failed.");
+  }
+}
 
   const unresolvedObservations = observations.filter((observation) =>
     ["Unverified", "Conflicting", "Inconclusive"].includes(
@@ -127,6 +349,19 @@ export default function Overview({
   const hasUnverifiedThreat = Boolean(
     threat || neighbourAlerts.some((alert) => alert.status === "Unverified")
   );
+  const assessedFields = Array.isArray(aiAssessment?.field_assessments)
+  ? aiAssessment.field_assessments
+  : Array.isArray(aiAssessment?.fields)
+    ? aiAssessment.fields
+    : aiAssessment?.crop_health || aiAssessment?.soil_moisture
+      ? [aiAssessment]
+      : [];
+
+const assessmentOverview =
+  aiAssessment?.overall_summary ||
+  aiAssessment?.summary ||
+  aiAssessment?.overview ||
+  "";
 
   return (
     <section className="fieldzy-overview">
@@ -164,6 +399,48 @@ export default function Overview({
           </div>
         </div>
       </div>
+
+      {/* Agricultural visual gallery */}
+<div className="overview-visual-gallery">
+
+  <div className="overview-visual-card overview-visual-large">
+    <img
+      src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1000"
+      alt="Wide view of green agricultural farmland"
+      loading="lazy"
+    />
+    <div className="overview-visual-caption">
+      <span>FIELD INSIGHTS</span>
+      <h3>Every field tells a story.</h3>
+      <p>Stay connected to what's happening on your farm.</p>
+    </div>
+  </div>
+
+  <div className="overview-visual-card">
+    <img
+      src="https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=800"
+      alt="Healthy agricultural crops"
+      loading="lazy"
+    />
+    <div className="overview-visual-caption">
+      <span>CROP MONITORING</span>
+      <h3>Watch your crops grow.</h3>
+    </div>
+  </div>
+
+  <div className="overview-visual-card">
+    <img
+      src="https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800"
+      alt="Plants growing in rich soil"
+      loading="lazy"
+    />
+    <div className="overview-visual-caption">
+      <span>FIELD CONDITIONS</span>
+      <h3>Understand your land.</h3>
+    </div>
+  </div>
+
+</div>
 
       {/* Main statistics */}
       <div className="overview-stat-grid">
@@ -232,176 +509,564 @@ export default function Overview({
               : "No active demo alert"}
           </span>
         </button>
-      </div>
+     </div>
+ 
+      {/* FIELDZY Local Agricultural Assessment */}
+      <article className="overview-panel fieldzy-ai-summary">
+        <div className="overview-panel-image">
+  <img
+    src="https://images.unsplash.com/photo-1499529112087-3cb3b73cec95?w=1200"
+    alt="Agricultural crops in a field"
+    loading="lazy"
+  />
+</div>
+        <div className="overview-panel-heading">
+          <div>
+            <p className="overview-section-label">
+              FIELDZY AGRICULTURAL INTELLIGENCE
+            </p>
+            <h3>Unified Field Assessment</h3>
+            <p className="overview-panel-description">
+              A structured review of saved field records, model predictions,
+              measurements and outstanding evidence gaps.
+            </p>
+          </div>
+
+          <Leaf size={24} />
+        </div>
+
+        <button
+          type="button"
+          className="overview-text-button"
+          onClick={generateFieldSummary}
+          disabled={summaryLoading || fields.length === 0}
+        >
+          {summaryLoading
+            ? "Reviewing field evidence..."
+            : aiAssessment
+              ? "Refresh Assessment"
+              : "Generate Field Assessment"}
+
+          {!summaryLoading && <ArrowRight size={16} />}
+        </button>
+
+        {summaryError && (
+          <div className="overview-empty-state">
+            <CircleAlert size={20} />
+            <p>{summaryError}</p>
+          </div>
+        )}
+
+        {aiAssessment && (
+          <div className="fieldzy-ai-summary-content">
+            <div className="overview-network-status">
+              <span className="overview-network-indicator local" />
+              <div>
+                <strong>Local evidence assessment generated</strong>
+                <p>
+                  Generated by FIELDZY's local assessment engine.
+                  This is not a Gemini-generated report or expert diagnosis.
+                </p>
+              </div>
+            </div>
+
+            {assessmentOverview && (
+              <p className="fieldzy-ai-summary-text">
+                {assessmentOverview}
+              </p>
+            )}
+
+            {assessedFields.length > 0 ? (
+              <div className="fieldzy-assessment-fields">
+                {assessedFields.map((field, index) => {
+                  const cropHealth = field.crop_health || {};
+                  const soilMoisture = field.soil_moisture || {};
+                  const evidenceReview = field.evidence_review || {};
+
+                  const findings = Array.isArray(field.findings)
+                    ? field.findings
+                    : [];
+
+                  const recommendations = Array.isArray(field.recommendations)
+                    ? field.recommendations
+                    : [];
+
+                  const prediction =
+                    cropHealth.prediction ||
+                    cropHealth.disease_prediction ||
+                    field.prediction ||
+                    null;
+
+                  const confidence =
+                    cropHealth.confidence ??
+                    field.confidence ??
+                    null;
+
+                  const cropMismatch =
+                    cropHealth.crop_mismatch === true ||
+                    field.crop_mismatch === true;
+
+                  const soilValue =
+                    soilMoisture.value ??
+                    soilMoisture.measurement ??
+                    soilMoisture.moisture_percentage ??
+                    null;
+
+                  const soilUnit = soilMoisture.unit || "%";
+
+                  const soilIsSimulated =
+                    soilMoisture.is_simulated === true ||
+                    soilMoisture.simulated === true;
+
+                  const missingEvidence = Array.isArray(
+                    evidenceReview.missing_evidence
+                  )
+                    ? evidenceReview.missing_evidence
+                    : [];
+
+                  const conflictingEvidence = Array.isArray(
+                    evidenceReview.conflicting_evidence
+                  )
+                    ? evidenceReview.conflicting_evidence
+                    : [];
+
+                  const unverifiedEvidence = Array.isArray(
+                    evidenceReview.unverified_evidence
+                  )
+                    ? evidenceReview.unverified_evidence
+                    : [];
+
+                  const fieldName =
+                    field.field_name ||
+                    field.name ||
+                    fields.find(
+                      (item) =>
+                        String(item.id) === String(field.field_id || field.id)
+                    )?.name ||
+                    `Field ${index + 1}`;
+
+                  const cropName =
+                    field.crop_type ||
+                    field.crop ||
+                    fields.find(
+                      (item) =>
+                        String(item.id) === String(field.field_id || field.id)
+                    )?.crop ||
+                    "Crop unspecified";
+
+                  return (
+                    <div
+                      className="fieldzy-assessment-field"
+                      key={field.field_id || field.id || index}
+                    >
+                      <div className="fieldzy-assessment-field-heading">
+                        <div>
+                          <strong>{fieldName}</strong>
+                          <small>{cropName}</small>
+                        </div>
+
+                        <span className="overview-status-tag unverified">
+                          Not expert verified
+                        </span>
+                      </div>
+
+                      {/* Plant model result */}
+                      <div className="fieldzy-assessment-section">
+                        <strong>
+                          <Leaf size={16} />
+                          Plant health prediction
+                        </strong>
+
+                        {prediction ? (
+                          <>
+                            <p>{prediction}</p>
+
+                            {confidence !== null && (
+                              <small>
+                                Model confidence:{" "}
+                                {Number.isFinite(Number(confidence))
+                                  ? `${Number(confidence).toFixed(2)}%`
+                                  : confidence}
+                              </small>
+                            )}
+
+                            {cropMismatch && (
+                              <div className="fieldzy-assessment-warning">
+                                <AlertTriangle size={17} />
+                                <span>
+                                  The model prediction may not match the
+                                  registered crop. Verify the plant identity
+                                  and image before relying on this result.
+                                </span>
+                              </div>
+                            )}
+
+                            <small>
+                              Model output is an unverified prediction,
+                              not a confirmed disease diagnosis.
+                            </small>
+                          </>
+                        ) : (
+                          <p>No plant model prediction is available.</p>
+                        )}
+                      </div>
+
+                      {/* Soil reading */}
+                      <div className="fieldzy-assessment-section">
+                        <strong>
+                          <Activity size={16} />
+                          Soil moisture
+                        </strong>
+
+                        {soilValue !== null ? (
+                          <>
+                            <p>
+                              {soilValue}
+                              {soilUnit}
+                            </p>
+
+                            {soilIsSimulated ? (
+                              <small>
+                                <AlertTriangle size={14} />
+                                Simulated demonstration reading — no physical
+                                sensor measurement.
+                              </small>
+                            ) : (
+                              <small>
+                                Check the measurement source and verification
+                                status before using this value.
+                              </small>
+                            )}
+                          </>
+                        ) : (
+                          <p>No soil moisture reading is available.</p>
+                        )}
+                      </div>
+
+                      {/* Findings */}
+                      {findings.length > 0 && (
+                        <div className="fieldzy-assessment-section">
+                          <strong>
+                            <ClipboardCheck size={16} />
+                            Findings
+                          </strong>
+
+                          <ul>
+                            {findings.map((finding, findingIndex) => (
+                              <li key={findingIndex}>
+                                {typeof finding === "string"
+                                  ? finding
+                                  : finding.message ||
+                                    finding.description ||
+                                    finding.title ||
+                                    JSON.stringify(finding)}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Evidence review */}
+                      {(missingEvidence.length > 0 ||
+                        conflictingEvidence.length > 0 ||
+                        unverifiedEvidence.length > 0) && (
+                        <div className="fieldzy-assessment-section">
+                          <strong>
+                            <ShieldCheck size={16} />
+                            Evidence review
+                          </strong>
+
+                          {missingEvidence.length > 0 && (
+                            <div>
+                              <small>Missing evidence</small>
+                              <ul>
+                                {missingEvidence.map((item, itemIndex) => (
+                                  <li key={itemIndex}>
+                                    {typeof item === "string"
+                                      ? item
+                                      : item.question ||
+                                        item.description ||
+                                        item.key ||
+                                        JSON.stringify(item)}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {conflictingEvidence.length > 0 && (
+                            <div>
+                              <small>Conflicting evidence</small>
+                              <ul>
+                                {conflictingEvidence.map((item, itemIndex) => (
+                                  <li key={itemIndex}>
+                                    {typeof item === "string"
+                                      ? item
+                                      : item.description ||
+                                        item.message ||
+                                        JSON.stringify(item)}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {unverifiedEvidence.length > 0 && (
+                            <div>
+                              <small>Unverified records</small>
+                              <ul>
+                                {unverifiedEvidence.map((item, itemIndex) => (
+                                  <li key={itemIndex}>
+                                    {typeof item === "string"
+                                      ? item
+                                      : item.description ||
+                                        item.source ||
+                                        item.type ||
+                                        JSON.stringify(item)}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Recommendations */}
+                      {recommendations.length > 0 && (
+                        <div className="fieldzy-assessment-section">
+                          <strong>
+                            <CheckCircle2 size={16} />
+                            Suggested next steps
+                          </strong>
+
+                          <ul>
+                            {recommendations.map((recommendation, itemIndex) => (
+                              <li key={itemIndex}>
+                                {typeof recommendation === "string"
+                                  ? recommendation
+                                  : recommendation.action ||
+                                    recommendation.description ||
+                                    recommendation.message ||
+                                    JSON.stringify(recommendation)}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="overview-empty-state">
+                <CircleAlert size={20} />
+                <p>
+                  The assessment was returned, but no per-field breakdown
+                  was found in the response.
+                </p>
+              </div>
+            )}
+
+            {Array.isArray(aiAssessment.limitations) &&
+              aiAssessment.limitations.length > 0 && (
+                <div className="fieldzy-assessment-limitations">
+                  <strong>Assessment limitations</strong>
+                  <ul>
+                    {aiAssessment.limitations.map((item, index) => (
+                      <li key={index}>
+                        {typeof item === "string"
+                          ? item
+                          : item.description || item.message || JSON.stringify(item)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+            {summaryGeneratedAt && (
+              <small>
+                Generated: {formatTime(summaryGeneratedAt)}
+              </small>
+            )}
+          </div>
+        )}
+
+        {!aiAssessment && !summaryLoading && !summaryError && (
+          <p className="overview-panel-description">
+            Generate an assessment to review saved observations, plant model
+            predictions, soil readings and evidence gaps together.
+          </p>
+        )}
+      </article>
 
       {/* Evidence Debt and verification */}
-      <div className="overview-primary-grid">
-        <article className="overview-panel evidence-debt-panel">
-          <div className="overview-panel-heading">
-            <div>
-              <p className="overview-section-label">EVIDENCE QUALITY</p>
-              <h3>Evidence Debt</h3>
-            </div>
+{/* Evidence Debt and verification */}
+<div className="overview-primary-grid">
 
-            <ShieldCheck size={23} />
-          </div>
+<EvidenceDebtMeter
+  observations={observations}
+  onReviewObservation={() => onNavigate("observations")}
+  onUpdateReview={updateObservationReview}
+  onUpdateVerification={updateVerification}
+  onAddEvidence={async (record) => {
+    const note = window.prompt(
+      `Add evidence note for: ${record.title || "Observation"}`
+    );
 
-          <div className="evidence-debt-score-row">
-            <strong>{evidenceDebt}</strong>
-            <span>/ 100</span>
+    if (!note?.trim()) {
+      return { success: false, message: "Cancelled." };
+    }
 
-            <span
-              className={`evidence-debt-status ${
-                evidenceDebt >= 60
-                  ? "high"
-                  : evidenceDebt >= 30
-                    ? "medium"
-                    : "low"
-              }`}
-            >
-              {evidenceDebt >= 60
-                ? "High outstanding debt"
-                : evidenceDebt >= 30
-                  ? "Moderate outstanding debt"
-                  : "Lower outstanding debt"}
-            </span>
-          </div>
+    if (typeof addEvidence !== "function") {
+      window.alert("Evidence saving is not connected.");
 
-          <div
-            className="evidence-debt-track"
-            role="progressbar"
-            aria-label="Evidence debt score"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={evidenceDebt}
-          >
-            <div
-              className={`evidence-debt-fill ${
-                evidenceDebt >= 60
-                  ? "high"
-                  : evidenceDebt >= 30
-                    ? "medium"
-                    : "low"
-              }`}
-              style={{
-                width: `${Math.max(0, Math.min(100, evidenceDebt))}%`,
-              }}
-            />
-          </div>
+      return { success: false, message: "Evidence saving unavailable." };
+    }
 
-          <p className="overview-panel-description">
-            A dashboard indicator based on unresolved evidence gaps and
-            observations that still need verification. It is not a crop-risk
-            prediction.
-          </p>
+    try {
+      const result = await addEvidence(record.id, {
+        note: note.trim(),
+        source: "Farmer observation",
+        independent: false,
+      });
 
-          <div className="evidence-debt-breakdown">
-            <div>
-              <span>Unresolved evidence gaps</span>
-              <strong>{unresolvedEvidenceCount}</strong>
-            </div>
+      if (result?.success === false) {
+        window.alert(result.message || "Evidence could not be saved.");
+        return result;
+      }
 
-            <div>
-              <span>Unverified observations</span>
-              <strong>{unverifiedCount}</strong>
-            </div>
+      return result || { success: true };
+    } catch (error) {
+      console.error("Evidence saving failed:", error);
+      window.alert("Could not save evidence.");
 
-            <div>
-              <span>Verified observations</span>
-              <strong>{verifiedCount}</strong>
-            </div>
-          </div>
+      return { success: false, message: error.message };
+    }
+  }}
+/>
 
-          <button
-            type="button"
-            className="overview-text-button"
-            onClick={() => onNavigate("observations")}
-          >
-            Review evidence gaps <ArrowRight size={16} />
-          </button>
-        </article>
-
-        {/* Field summary */}
-        <article className="overview-panel">
-          <div className="overview-panel-heading">
-            <div>
-              <p className="overview-section-label">FIELD REGISTER</p>
-              <h3>Field Health Summary</h3>
-            </div>
-
-            <Leaf size={23} />
-          </div>
-
-          <div className="field-summary-total">
-            <strong>{totalFields}</strong>
-            <span>registered fields</span>
-          </div>
-
-          {fields.length === 0 ? (
-            <div className="overview-empty-state">
-              <Sprout size={24} />
-              <p>No fields registered yet.</p>
-            </div>
-          ) : (
-            <div className="overview-field-list">
-              {fields.slice(0, 5).map((field) => {
-                const fieldObservations = observations.filter(
-                  (observation) => observation.fieldId === field.id
-                );
-
-                const pendingCount = fieldObservations.filter(
-                  (observation) =>
-                    !["Corroborated", "Expert-confirmed"].includes(
-                      observation.status
-                    )
-                ).length;
-
-                return (
-                  <button
-                    type="button"
-                    className="overview-field-row"
-                    key={field.id}
-                    onClick={() => onNavigate("fields")}
-                  >
-                    <span className="overview-field-icon">
-                      <Sprout size={17} />
-                    </span>
-
-                    <span className="overview-field-copy">
-                      <strong>{field.name}</strong>
-                      <small>
-                        {field.crop || "Crop unspecified"}
-                      </small>
-                    </span>
-
-                    <span
-                      className={`overview-field-count ${
-                        pendingCount > 0 ? "has-pending" : ""
-                      }`}
-                    >
-                      {pendingCount} pending
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {fields.length > 5 && (
-            <p className="overview-panel-description">
-              Showing 5 of {fields.length} registered fields.
-            </p>
-          )}
-
-          <button
-            type="button"
-            className="overview-text-button"
-            onClick={() => onNavigate("fields")}
-          >
-            Open My Fields <ArrowRight size={16} />
-          </button>
-        </article>
+  {/* Field summary */}
+  <article className="overview-panel">
+    <div className="overview-panel-image overview-panel-image-small">
+  <img
+    src="https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=900"
+    alt="Green crops growing in agricultural rows"
+    loading="lazy"
+  />
+</div>
+    <div className="overview-panel-heading">
+      <div>
+        <p className="overview-section-label">FIELD REGISTER</p>
+        <h3>Field Health Summary</h3>
       </div>
+      <Leaf size={23} />
+    </div>
+
+    <div className="field-summary-total">
+      <strong>{totalFields}</strong>
+      <span>registered fields</span>
+    </div>
+
+    {fields.length === 0 ? (
+      <div className="overview-empty-state">
+        <Sprout size={24} />
+        <p>No fields registered yet.</p>
+      </div>
+    ) : (
+      <div className="overview-field-list">
+        {fields.slice(0, 5).map((field) => {
+          const fieldObservations = observations.filter(
+            (observation) => observation.fieldId === field.id
+          );
+
+          const pendingCount = fieldObservations.filter(
+            (observation) =>
+              !["Corroborated", "Expert-confirmed"].includes(
+                observation.status
+              )
+          ).length;
+
+          return (
+            <button
+              type="button"
+              className="overview-field-row"
+              key={field.id}
+              onClick={() => onNavigate("fields")}
+            >
+              <span className="overview-field-icon">
+                <Sprout size={17} />
+              </span>
+
+              <span className="overview-field-copy">
+                <strong>{field.name}</strong>
+                <small>{field.crop || "Crop unspecified"}</small>
+              </span>
+
+              <span
+                className={`overview-field-count ${
+                  pendingCount > 0 ? "has-pending" : ""
+                }`}
+              >
+                {pendingCount} pending
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    )}
+
+    {fields.length > 5 && (
+      <p className="overview-panel-description">
+        Showing 5 of {fields.length} registered fields.
+      </p>
+    )}
+
+    <button
+      type="button"
+      className="overview-text-button"
+      onClick={() => onNavigate("fields")}
+    >
+      Open My Fields <ArrowRight size={16} />
+    </button>
+  </article>
+
+</div>
+
+{/* Threat Visualizer connected to Evidence Debt */}
+{ThreatVisualizer && (
+  <ThreatVisualizer
+    events={
+      threat
+        ? [
+            {
+              id: threat.id,
+              fieldId: threat.fieldId,
+              field:
+                fields.find(
+                  (field) => String(field.id) === String(threat.fieldId)
+                )?.name || "Field not assigned",
+              type: threat.title || "Threat alert",
+              detail:
+                threat.source || "Recorded alert requires investigation.",
+              time: formatTime(threat.timestamp),
+              level:
+                ["urgent", "critical"].includes(
+                  String(threat.status).toLowerCase()
+                )
+                  ? "urgent"
+                  : "review",
+              evidence: threat.simulated
+                ? "Simulated demonstration alert"
+                : "Recorded alert",
+              verified: false,
+              simulated: Boolean(threat.simulated),
+            },
+          ]
+        : []
+    }
+    onReview={handleThreatReview}
+  />
+)}
 
       {/* Priority action queue */}
       <article className="overview-panel overview-action-panel">
@@ -518,6 +1183,14 @@ export default function Overview({
             <AlertTriangle size={22} />
           </div>
 
+          <div className="overview-panel-image overview-panel-image-small">
+  <img
+    src="https://images.unsplash.com/photo-1501691223387-dd0500403074?w=900"
+    alt="Changing weather over a landscape"
+    loading="lazy"
+  />
+</div>
+
           {threat ? (
             <div className="overview-alert-card">
               <span className="overview-alert-badge">
@@ -582,6 +1255,14 @@ export default function Overview({
             {isOffline ? <Cloud size={22} /> : <Radio size={22} />}
           </div>
 
+          <div className="overview-panel-image overview-panel-image-small">
+  <img
+    src="https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=900"
+    alt="Technology and infrastructure"
+    loading="lazy"
+  />
+</div>
+
           <div className="overview-network-status">
             <span
               className={`overview-network-indicator ${
@@ -631,6 +1312,18 @@ export default function Overview({
             Open Network Systems <ArrowRight size={16} />
           </button>
         </article>
+        <button
+  type="button"
+  className="overview-text-button"
+  onClick={() =>
+    triggerDemoThreat({
+      title: "Demo wildlife movement alert",
+      fieldId: fields[0]?.id || null,
+    })
+  }
+>
+  Trigger Demo Threat <ArrowRight size={16} />
+</button>
       </div>
 
       {/* Recent activity */}

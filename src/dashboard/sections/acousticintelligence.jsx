@@ -123,6 +123,7 @@ export default function AcousticIntelligence({
   const [currentSample, setCurrentSample] = useState(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [fieldContext, setFieldContext] = useState("");
 
   const streamRef = useRef(null);
   const contextRef = useRef(null);
@@ -372,7 +373,7 @@ async function captureSample() {
     formData.append("file", audioBlob, "fieldzy-audio.webm");
 
     const response = await fetch(
-      "http://127.0.0.1:8000/acoustic-intelligence",
+      "http://127.0.0.1:8001/acoustic-intelligence",
       { method: "POST", body: formData }
     );
     console.log("AI backend status:", response.status);
@@ -549,35 +550,152 @@ async function captureSample() {
     setError("");
   }
 
-function createObservation(event) {
+
+async function createObservation(event) {
   if (!addObservation) {
     setError("Observation service is unavailable.");
-    setMessage("");
     return false;
   }
 
-  const result = addObservation({
-    fieldId: event.fieldId,
-    category: "Acoustic",
-    title: "Sound profile changed from field reference",
-    description:
-      "EchoPrint measured a difference from the saved sound reference. This is not a confirmed agricultural threat.",
-    nextAction:
-      "Repeat the recording under similar conditions and visually inspect the field before drawing conclusions.",
-  });
+  try {
+    setError("");
+    setMessage("Validating acoustic evidence...");
 
-  if (result?.success === false || !result) {
-    setError(
-      result?.message || "Could not create the observation. Check the selected field."
+    const sample = event.sample;
+
+    const field = fields.find(
+      (item) => item.id === event.fieldId
     );
+
+    const modelResult = {
+      prediction: sample.aiPrediction || null,
+      confidence: sample.aiConfidence ?? null,
+    };
+
+    const context = {
+      recording_quality:
+        sample.quality === "Usable" ? "Usable" : "",
+      field_context: fieldContext.trim(),
+      baseline_available: Boolean(
+        profiles[event.fieldId]?.samples?.length >=
+          REQUIRED_BASELINE_SAMPLES
+      ),
+    };
+
+    const evidence = [
+      {
+        type: "audio_recording_analysis",
+        source: "FIELDZY EchoPrint",
+        recording_quality: sample.quality,
+        rms: sample.rms,
+        spectral_centroid: sample.centroid,
+        clipping_ratio: sample.clippingRatio,
+        variation: sample.variation,
+        baseline_comparison: {
+          rms_change: event.rmsChange,
+          centroid_change: event.centroidChange,
+        },
+        captured_at: sample.capturedAt,
+      },
+    ];
+
+    // Send the result to the central evidence engine.
+    const response = await fetch(
+      "http://127.0.0.1:8001/validate-evidence",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          feature: "acoustic",
+          model_result: modelResult,
+          context,
+          evidence,
+        }),
+      }
+    );
+
+    const validation = await response.json();
+
+    if (!response.ok || !validation.success) {
+      throw new Error(
+        validation.detail || "Evidence validation failed."
+      );
+    }
+
+    // Convert backend questions into Dashboard evidence gaps.
+    const evidenceGaps = (
+      validation.missing_evidence || []
+    ).map((item) => ({
+      question: item.question,
+      resolved: false,
+    }));
+
+    const predictionText = sample.aiPrediction
+      ? `The acoustic model predicted "${sample.aiPrediction}" with ${Number(
+          sample.aiConfidence
+        ).toFixed(1)}% model confidence.`
+      : "No AI sound prediction was available.";
+
+    const description = [
+      predictionText,
+      `Recording quality: ${sample.quality}.`,
+      `Recording context: ${fieldContext.trim() || "Not provided"}.`,
+      `Baseline comparison: ${formatPercent(
+        event.rmsChange
+      )} audio level change and ${formatPercent(
+        event.centroidChange
+      )} spectral brightness change.`,
+      "These measurements are investigation signals, not confirmation of pests, disease, or another agricultural threat.",
+      `Evidence assessment: ${validation.status}.`,
+      validation.reasoning || "",
+    ].join(" ");
+
+    const result = await addObservation({
+      fieldId: event.fieldId,
+      category: "Acoustic",
+      title: "Acoustic variation from field reference",
+      description,
+      evidence,
+      evidenceGaps,
+      validation,
+      nextAction:
+        validation.next_action ||
+        "Repeat the recording under similar conditions and inspect the field.",
+    });
+
+    if (!result?.success) {
+      throw new Error(
+        result?.message || "Could not save the observation."
+      );
+    }
+
+    setMessage(
+      validation.status === "preliminary"
+        ? "Observation saved. Basic evidence checks passed, but the sound classification is not confirmed."
+        : `Observation saved as unverified. ${validation.missing_count} evidence requirement(s) still need attention.`
+    );
+
+    setError("");
+    return true;
+
+  } catch (observationError) {
+    console.error(
+      "Acoustic evidence validation failed:",
+      observationError
+    );
+
+    setError(
+      observationError.message ||
+        "Could not validate the acoustic observation."
+    );
+
     setMessage("");
     return false;
   }
-
-  setMessage("An unverified observation was added.");
-  setError("");
-  return true;
 }
+
 
 
   function resetBaseline() {
@@ -648,6 +766,26 @@ function createObservation(event) {
             </option>
           ))}
         </select>
+
+        <div className="echo-context-input">
+  <label htmlFor="echo-context">
+    What was happening in the field during recording?
+  </label>
+
+  <textarea
+    id="echo-context"
+    value={fieldContext}
+    onChange={(event) =>
+      setFieldContext(event.target.value)
+    }
+    placeholder="Example: Recording taken near the crops in the evening. Light wind was present."
+    rows={3}
+  />
+
+  <small>
+    This context helps FIELDZY assess the recording responsibly.
+  </small>
+</div>
 
         <div className="echo-baseline-status">
           <div className="echo-status-icon">
@@ -779,7 +917,7 @@ function createObservation(event) {
       Detected sound: {currentSample.aiPrediction}
       <br />
       Confidence:{" "}
-      {(currentSample.aiConfidence * 100).toFixed(1)}%
+      {Number(currentSample.aiConfidence).toFixed(1)}%
       <br />
       <small>
         AI prediction for investigation. Not a confirmed threat.
@@ -924,10 +1062,13 @@ function createObservation(event) {
 <button
   type="button"
   className="echo-link-button"
-  onClick={() => {
-    createObservation(event);
+onClick={async () => {
+  const saved = await createObservation(event);
+
+  if (saved) {
     onNavigate?.("observations");
-  }}
+  }
+}}
 >
   Create unverified observation
 </button>

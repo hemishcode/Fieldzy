@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&display=swap");
 
 :root {
   font-family: "DM Sans", sans-serif;
@@ -1173,4 +1173,625 @@ footer p {
   object-fit: cover;
   object-position: top;
   border-radius: 8px;
+}
+
+
+/* ==========================================
+   FIELDZY — PHOTOGRAPHIC LANDING PAGE
+========================================== */
+
+/* Shared typography for new sections */
+
+.farmer-story,
+.fieldzy-intro-section,
+.fieldzy-process-section,
+.fieldzy-capabilities-section,
+.fieldzy-final-section {
+  font-family: Garamond, Georgia, serif;
+}
+
+.landing-eyebrow {
+  display: inline-block;
+  color: #83a96b;
+  font-family: Garamond, Georgia, serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+}
+
+/* 01 — Farmer photograph */
+
+.farmer-story {
+  position: relative;
+  min-height: 660px;
+  display: flex;
+  align-items: center;
+  padding: 100px max(8%, calc((100% - 1200px) / 2));
+  overflow: hidden;
+
+  background-image: url("/farmer-field.png");
+  background-size: cover;
+  background-position: center 48%;
+  background-repeat: no-repeat;
+
+  color: #fff;
+}
+
+.farmer-story-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(5, 27, 17, 0.94) 0%,
+      rgba(5, 27, 17, 0.78) 42%,
+      rgba(5, 27, 17, 0.25) 100%
+    ),
+    linear-gradient(
+      0deg,
+      rgba(5, 27, 17, 0.35),
+      transparent 50%
+    );
+}
+
+.farmer-story-content {
+  position: relative;
+  z-index: 2;
+  max-width: 680px;
+}
+
+.farmer-story-content h2 {
+  margin: 25px 0;
+  font-size: clamp(48px, 6.5vw, 82px);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -1.8px;
+}
+
+.farmer-story-content h2 span {
+  color: #c2e39b;
+  font-style: italic;
+}
+
+.farmer-story-content > p {
+  max-width: 520px;
+  margin: 0;
+  color: #e0e9dc;
+  font-size: 20px;
+  line-height: 1.55;
+}
+
+.story-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 32px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #b8d69b;
+  color: #e8f5dc;
+  font-size: 19px;
+  transition: gap 0.25s ease;
+}
+
+.story-link:hover {
+  gap: 19px;
+}
+
+.farmer-story-caption {
+  position: absolute;
+  z-index: 2;
+  right: 7%;
+  bottom: 35px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #e5eddf;
+  font-size: 15px;
+}
+
+.farmer-story-caption svg {
+  color: #c2e39b;
+}
+
+/* 02 — Our vision */
+
+.fieldzy-intro-section {
+  padding: 115px 7%;
+  background: #f6f5ed;
+  color: #263e2d;
+}
+
+.fieldzy-intro-heading {
+  max-width: 790px;
+  margin: 0 auto 65px;
+  text-align: center;
+}
+
+.fieldzy-intro-heading h2,
+.capabilities-heading h2 {
+  margin: 23px 0;
+  font-size: clamp(38px, 5vw, 62px);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -1px;
+}
+
+.fieldzy-intro-heading h2 span,
+.capabilities-heading h2 span {
+  color: #6c9257;
+  font-style: italic;
+}
+
+.fieldzy-intro-heading > p,
+.capabilities-heading > p {
+  max-width: 650px;
+  margin: 0 auto;
+  color: #697568;
+  font-size: 19px;
+  line-height: 1.55;
+}
+
+.fieldzy-values-grid {
+  width: min(1100px, 100%);
+  margin: auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 23px;
+}
+
+.fieldzy-value-card {
+  position: relative;
+  min-height: 250px;
+  padding: 35px 30px;
+  background: #fff;
+  border: 1px solid #e6e9dd;
+  border-radius: 5px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.fieldzy-value-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 35px rgba(40, 69, 39, 0.08);
+}
+
+.fieldzy-value-card > svg {
+  margin-top: 25px;
+  color: #6c9257;
+}
+
+.value-number {
+  display: block;
+  color: #9bad8d;
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+
+.fieldzy-value-card h3 {
+  margin: 20px 0 10px;
+  color: #304b35;
+  font-size: 27px;
+  font-weight: 600;
+}
+
+.fieldzy-value-card p {
+  margin: 0;
+  color: #788173;
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+/* 03 — How FIELDZY works */
+
+.fieldzy-process-section {
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  align-items: center;
+  gap: 85px;
+  padding: 110px 8%;
+  background: #e9eee3;
+  color: #263e2d;
+}
+
+.fieldzy-process-image {
+  position: relative;
+  min-height: 520px;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.fieldzy-process-image img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.process-image-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 35px;
+  background: linear-gradient(
+    0deg,
+    rgba(5, 28, 17, 0.85),
+    transparent 75%
+  );
+  color: white;
+}
+
+.process-image-overlay > span {
+  color: #c2e39b;
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+
+.process-image-overlay h2 {
+  margin: 15px 0 0;
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 500;
+  line-height: 1.08;
+}
+
+.fieldzy-process-content > h2 {
+  margin: 20px 0 35px;
+  font-size: clamp(39px, 4.5vw, 57px);
+  font-weight: 500;
+  line-height: 1.03;
+}
+
+.process-step {
+  display: flex;
+  gap: 23px;
+  padding: 23px 0;
+  border-top: 1px solid #d4ddcd;
+}
+
+.process-step > span {
+  flex-shrink: 0;
+  color: #7b9a65;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.process-step h3 {
+  margin: 0 0 8px;
+  color: #35533b;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.process-step p {
+  max-width: 440px;
+  margin: 0;
+  color: #728071;
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+/* 04 — Capabilities */
+
+.fieldzy-capabilities-section {
+  padding: 115px 7%;
+  background: #fafaf6;
+  color: #263e2d;
+}
+
+.capabilities-heading {
+  max-width: 750px;
+  margin: 0 auto 60px;
+  text-align: center;
+}
+
+.fieldzy-capabilities-grid {
+  width: min(1100px, 100%);
+  margin: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.capability-card {
+  position: relative;
+  min-height: 270px;
+  padding: 30px;
+  overflow: hidden;
+  background: #edf1e7;
+  border: 1px solid #e1e8da;
+  border-radius: 5px;
+  transition: transform 0.25s ease;
+}
+
+.capability-card:hover {
+  transform: translateY(-4px);
+}
+
+.capability-large {
+  background: #e2ebd9;
+}
+
+.capability-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #769466;
+  font-family: Garamond, Georgia, serif;
+  font-size: 13px;
+  letter-spacing: 1.4px;
+}
+
+.capability-card h3 {
+  max-width: 440px;
+  margin: 30px 0 12px;
+  color: #304b35;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.capability-card p {
+  position: relative;
+  z-index: 1;
+  max-width: 440px;
+  margin: 0;
+  color: #6d796a;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.capability-decoration {
+  position: absolute;
+  right: 25px;
+  bottom: 20px;
+  color: rgba(83, 126, 66, 0.15);
+}
+
+.capability-wide {
+  grid-column: 1 / -1;
+  min-height: 230px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #294b32;
+  border-color: #294b32;
+}
+
+.capability-wide .capability-topline {
+  color: #c3dfa9;
+}
+
+.capability-wide h3 {
+  color: #f1f4e9;
+}
+
+.capability-wide p {
+  color: #d0dfcd;
+}
+
+.capability-wide .capability-decoration {
+  position: static;
+  margin: 25px 35px;
+  color: rgba(204, 233, 179, 0.3);
+  flex-shrink: 0;
+}
+
+/* 05 — Final section */
+
+.fieldzy-final-section {
+  position: relative;
+  min-height: 450px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 90px 25px;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      ellipse at 50% 120%,
+      rgba(129, 164, 92, 0.25),
+      transparent 55%
+    ),
+    #102f20;
+  color: #f5f4e9;
+  text-align: center;
+}
+
+.final-section-decoration {
+  position: absolute;
+  right: 9%;
+  bottom: -15px;
+  color: rgba(201, 232, 175, 0.09);
+}
+
+.fieldzy-final-section h2 {
+  position: relative;
+  margin: 22px 0;
+  font-size: clamp(48px, 6vw, 76px);
+  font-weight: 500;
+  line-height: 0.98;
+}
+
+.fieldzy-final-section h2 span {
+  color: #c2e39b;
+  font-style: italic;
+}
+
+.fieldzy-final-section > p {
+  max-width: 520px;
+  margin: 0;
+  color: #c4d2c0;
+  font-size: 19px;
+  line-height: 1.5;
+}
+
+.fieldzy-final-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  margin-top: 30px;
+  padding: 16px 24px;
+  border: 0;
+  border-radius: 3px;
+  background: #c2e39b;
+  color: #193d25;
+  font-family: Garamond, Georgia, serif;
+  font-size: 19px;
+  font-weight: 600;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.fieldzy-final-button:hover {
+  transform: translateY(-3px);
+  background: #d5efb9;
+}
+
+/* Responsive layout */
+
+@media (max-width: 850px) {
+  .fieldzy-process-section {
+    grid-template-columns: 1fr;
+    gap: 45px;
+  }
+
+  .fieldzy-process-image {
+    min-height: 420px;
+  }
+
+  .fieldzy-values-grid {
+    gap: 13px;
+  }
+
+  .fieldzy-value-card {
+    padding: 25px 20px;
+  }
+}
+
+@media (max-width: 650px) {
+  .farmer-story {
+    min-height: 610px;
+    padding: 85px 25px;
+    background-position: 58% center;
+  }
+
+  .farmer-story-overlay {
+    background: linear-gradient(
+      90deg,
+      rgba(5, 27, 17, 0.88),
+      rgba(5, 27, 17, 0.52)
+    );
+  }
+
+  .farmer-story-content h2 {
+    font-size: clamp(47px, 11vw, 65px);
+  }
+
+  .farmer-story-content > p {
+    font-size: 18px;
+  }
+
+  .farmer-story-caption {
+    right: auto;
+    left: 25px;
+    bottom: 25px;
+    font-size: 13px;
+  }
+
+  .fieldzy-intro-section,
+  .fieldzy-capabilities-section {
+    padding: 80px 22px;
+  }
+
+  .fieldzy-intro-heading {
+    margin-bottom: 40px;
+  }
+
+  .fieldzy-intro-heading h2,
+  .capabilities-heading h2 {
+    font-size: 41px;
+  }
+
+  .fieldzy-intro-heading > p,
+  .capabilities-heading > p {
+    font-size: 17px;
+  }
+
+  .fieldzy-values-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fieldzy-value-card {
+    min-height: 220px;
+  }
+
+  .fieldzy-process-section {
+    padding: 75px 22px;
+  }
+
+  .fieldzy-process-image {
+    min-height: 360px;
+  }
+
+  .process-image-overlay {
+    padding: 23px;
+  }
+
+  .fieldzy-process-content > h2 {
+    font-size: 43px;
+  }
+
+  .process-step h3 {
+    font-size: 21px;
+  }
+
+  .process-step p {
+    font-size: 16px;
+  }
+
+  .fieldzy-capabilities-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .capability-card,
+  .capability-wide {
+    grid-column: auto;
+    min-height: 240px;
+    padding: 25px;
+  }
+
+  .capability-card h3 {
+    font-size: 29px;
+  }
+
+  .capability-card p {
+    font-size: 17px;
+  }
+
+  .capability-wide .capability-decoration {
+    display: none;
+  }
+
+  .fieldzy-final-section {
+    min-height: 400px;
+    padding: 75px 23px;
+  }
+
+  .fieldzy-final-section h2 {
+    font-size: 51px;
+  }
+
+  .fieldzy-final-section > p {
+    font-size: 17px;
+  }
+
+  .fieldzy-final-button {
+    font-size: 17px;
+    padding: 15px 18px;
+  }
 }
