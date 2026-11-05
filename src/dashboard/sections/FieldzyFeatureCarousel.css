@@ -1,0 +1,265 @@
+/* =========================================
+   FIELDZY FEATURE CAROUSEL
+   Harvest Sand theme
+========================================= */
+
+.fieldzy-carousel {
+  --fieldzy-green: #65a879;
+  --fieldzy-ink: #f0f2ed;
+  --fieldzy-muted: #b0b7b0;
+  --fieldzy-border: #414743;
+
+  width: 100%;
+  margin: 22px 0 28px;
+  padding: 22px;
+  box-sizing: border-box;
+
+  background:#d7dbd0;
+  border: 1px solid var(--fieldzy-border);
+  border-radius: 20px;
+  overflow: hidden;
+}
+/* Heading */
+
+.fieldzy-carousel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  margin-bottom: 20px;
+}
+
+.fieldzy-eyebrow {
+  display: block;
+  margin-bottom: 6px;
+
+  color: var(--fieldzy-green);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.fieldzy-carousel-heading h2 {
+  margin: 0 0 5px;
+
+  color: var(--fieldzy-ink);
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -0.7px;
+}
+
+.fieldzy-carousel-heading p {
+  margin: 0;
+
+  color: var(--fieldzy-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.fieldzy-carousel-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  color: var(--fieldzy-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.fieldzy-live-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+
+  background: #4c9864;
+  border-radius: 50%;
+}
+
+/* Scrolling viewport */
+
+.fieldzy-carousel-window {
+  width: 100%;
+  overflow: hidden;
+  padding: 3px 0 9px;
+}
+
+/* Moving track */
+
+.fieldzy-carousel-track {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  width: max-content;
+
+  animation: fieldzy-feature-scroll 42s linear infinite;
+  will-change: transform;
+}
+
+/* Pause while hovering or interacting */
+
+.fieldzy-feature-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 0 0 250px;
+  width: 250px;
+  min-height: 188px;
+  padding: 19px;
+  box-sizing: border-box;
+  text-align: left;
+  font-family: inherit;
+
+  color: #f0f2ed;
+background: #707873;
+border: 1px solid #858d87;
+  border-radius: 16px;
+
+  cursor: pointer;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.fieldzy-feature-card:hover {
+  border-color: #65a879;
+  box-shadow: 0 8px 22px rgb(0 0 0 / 20%);
+  transform: translateY(-3px);
+}
+
+.fieldzy-feature-card:focus-visible {
+  outline: 3px solid #78a985;
+  outline-offset: 3px;
+}
+
+/* Icon and arrow */
+
+.fieldzy-feature-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.fieldzy-feature-icon {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  flex-shrink: 0;
+
+  color: #83c995;
+  background: #263f30;
+  border-radius: 12px;
+}
+
+.fieldzy-feature-arrow {
+  color: #899586;
+  transition: transform 180ms ease;
+}
+
+.fieldzy-feature-card:hover .fieldzy-feature-arrow {
+  transform: translate(3px, -3px);
+}
+
+/* Text */
+
+.fieldzy-feature-card h3 {
+  margin: 0 0 7px;
+
+  color: var(--fieldzy-ink);
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: -0.25px;
+  line-height: 1.4;
+}
+
+.fieldzy-feature-description {
+  margin: 0 0 15px;
+
+  color: var(--fieldzy-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.fieldzy-feature-detail {
+  margin-top: auto;
+
+  color: var(--fieldzy-green);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Seamless loop: move by the width of one set of cards */
+
+@keyframes fieldzy-feature-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Tablet and mobile */
+
+@media (max-width: 600px) {
+  .fieldzy-carousel {
+    margin: 18px 0 24px;
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .fieldzy-carousel-heading {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .fieldzy-carousel-heading h2 {
+    font-size: 20px;
+  }
+
+  .fieldzy-carousel-heading p {
+    font-size: 12px;
+  }
+
+  .fieldzy-carousel-label {
+    font-size: 10px;
+  }
+
+  .fieldzy-feature-card {
+    flex-basis: 225px;
+    width: 225px;
+    min-height: 180px;
+  }
+
+  .fieldzy-carousel-track {
+    animation-duration: 48s;
+  }
+}
+
+/* Respect reduced-motion preferences */
+
+@media (prefers-reduced-motion: reduce) {
+  .fieldzy-carousel-track {
+    animation: none;
+    transform: none;
+  }
+
+  .fieldzy-carousel-window {
+    overflow-x: auto;
+  }
+}
+.fieldzy-feature-arrow {
+  color: #a4ada5;
+  transition: transform 180ms ease;
+}
+
+.fieldzy-feature-card:hover .fieldzy-feature-arrow {
+  transform: translate(3px, -3px);
+}
+
+.fieldzy-live-dot {
+  background: #65a879;
+}
