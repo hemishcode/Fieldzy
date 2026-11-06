@@ -381,9 +381,9 @@ async function captureSample() {
     const aiResult = await response.json();
     console.log("AI prediction:", aiResult);
 
-    if (!response.ok || aiResult.error) {
-      throw new Error(aiResult.error || "AI analysis failed.");
-    }
+   if (!response.ok || aiResult.error) {
+  throw new Error(aiResult.error || "AI analysis failed.");
+}
 
     const enrichedResult = {
       ...result,

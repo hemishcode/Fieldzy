@@ -56,6 +56,7 @@ allow_origins=[
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "https://fieldzy-abxkl5rkg-hemishcode.vercel.app",
+    "https://fieldzy-joe75pgm0-hemishcode.vercel.app",
 ],
     allow_credentials=True,
     allow_methods=["*"],
