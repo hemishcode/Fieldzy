@@ -138,7 +138,7 @@ export default function SoilMoisture({
 
         // Send the reading to the central evidence engine.
         const response = await fetch(
-          "https://article-behind-instance-christopher.trycloudflare.com/validate-evidence",
+          "https://owns-artists-pill-occasions.trycloudflare.com/validate-evidence",
           {
             method: "POST",
             headers: {

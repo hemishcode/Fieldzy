@@ -146,7 +146,7 @@ async function generateFieldSummary() {
     };
 
     const response = await fetch(
-      "https://article-behind-instance-christopher.trycloudflare.com/field-health-summary",
+      "https://owns-artists-pill-occasions.trycloudflare.com/field-health-summary",
       {
         method: "POST",
         headers: {
@@ -202,7 +202,7 @@ setSummaryGeneratedAt(new Date().toISOString());
 
   try {
     const response = await fetch(
-      "https://article-behind-instance-christopher.trycloudflare.com/validate-evidence",
+      "https://owns-artists-pill-occasions.trycloudflare.com/validate-evidence",
       {
         method: "POST",
         headers: {
