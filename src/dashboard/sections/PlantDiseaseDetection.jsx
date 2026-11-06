@@ -93,7 +93,7 @@ export default function PlantDiseaseDetection({
       formData.append("file", file);
 
       const predictionResponse = await fetch(
-        "http://127.0.0.1:8001/predict-plant",
+        "https://article-behind-instance-christopher.trycloudflare.com/predict-plant",
         {
           method: "POST",
           body: formData,
@@ -113,7 +113,7 @@ export default function PlantDiseaseDetection({
       // 2. Send model output and farmer-provided context
       // to the central evidence validation engine.
       const validationResponse = await fetch(
-        "http://127.0.0.1:8001/validate-evidence",
+        "https://article-behind-instance-christopher.trycloudflare.com/validate-evidence",
         {
           method: "POST",
           headers: {

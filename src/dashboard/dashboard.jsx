@@ -36,7 +36,7 @@ async function analyzeFarmSound(audioFile) {
   formData.append("file", audioFile);
 
   const response = await fetch(
-    "http://127.0.0.1:8001/analyze",
+    "https://article-behind-instance-christopher.trycloudflare.com/analyze",
     {
       method: "POST",
       body: formData,
@@ -1825,7 +1825,7 @@ async function receiveDemoNeighbourAlert(alertData = {}) {
 
   try {
     const response = await fetch(
-      "http://127.0.0.1:8001/validate-evidence",
+      "https://article-behind-instance-christopher.trycloudflare.com/validate-evidence",
       {
         method: "POST",
         headers: {

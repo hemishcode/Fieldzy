@@ -373,7 +373,7 @@ async function captureSample() {
     formData.append("file", audioBlob, "fieldzy-audio.webm");
 
     const response = await fetch(
-      "http://127.0.0.1:8001/acoustic-intelligence",
+      "https://article-behind-instance-christopher.trycloudflare.com/acoustic-intelligence",
       { method: "POST", body: formData }
     );
     console.log("AI backend status:", response.status);
@@ -601,7 +601,7 @@ async function createObservation(event) {
 
     // Send the result to the central evidence engine.
     const response = await fetch(
-      "http://127.0.0.1:8001/validate-evidence",
+      "https://article-behind-instance-christopher.trycloudflare.com/validate-evidence",
       {
         method: "POST",
         headers: {
