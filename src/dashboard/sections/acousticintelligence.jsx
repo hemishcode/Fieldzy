@@ -373,7 +373,7 @@ async function captureSample() {
     formData.append("file", audioBlob, "fieldzy-audio.webm");
 
     const response = await fetch(
-      "https://unlike-reid-consequently-program.trycloudflare.com/acoustic-intelligence",
+      "https://applicant-brakes-incomplete-secondary.trycloudflare.com/acoustic-intelligence",
       { method: "POST", body: formData }
     );
     console.log("AI backend status:", response.status);
@@ -601,7 +601,7 @@ async function createObservation(event) {
 
     // Send the result to the central evidence engine.
     const response = await fetch(
-      "https://unlike-reid-consequently-program.trycloudflare.com/validate-evidence",
+      "https://applicant-brakes-incomplete-secondary.trycloudflare.com/validate-evidence",
       {
         method: "POST",
         headers: {

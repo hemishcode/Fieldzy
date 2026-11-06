@@ -55,6 +55,8 @@ app.add_middleware(
 allow_origins=[
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://fieldzy.vercel.app",
+    "https://fieldzy-git-main-hemishcode.vercel.app",
     "https://fieldzy-abxkl5rkg-hemishcode.vercel.app",
     "https://fieldzy-joe75pgm0-hemishcode.vercel.app",
 ],

@@ -138,7 +138,7 @@ export default function SoilMoisture({
 
         // Send the reading to the central evidence engine.
         const response = await fetch(
-          "https://unlike-reid-consequently-program.trycloudflare.com/validate-evidence",
+          "https://applicant-brakes-incomplete-secondary.trycloudflare.com/validate-evidence",
           {
             method: "POST",
             headers: {

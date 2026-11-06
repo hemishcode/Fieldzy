@@ -36,7 +36,7 @@ async function analyzeFarmSound(audioFile) {
   formData.append("file", audioFile);
 
   const response = await fetch(
-    "https://unlike-reid-consequently-program.trycloudflare.com/acoustic-intelligence",
+    "https://applicant-brakes-incomplete-secondary.trycloudflare.com/acoustic-intelligence",
     {
       method: "POST",
       body: formData,
@@ -1825,7 +1825,7 @@ async function receiveDemoNeighbourAlert(alertData = {}) {
 
   try {
     const response = await fetch(
-      "unlike-reid-consequently-program.trycloudflare.com/validate-evidence",
+      "https://applicant-brakes-incomplete-secondary.trycloudflare.com/validate-evidence",
       {
         method: "POST",
         headers: {
