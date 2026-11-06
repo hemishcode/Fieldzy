@@ -93,7 +93,7 @@ export default function PlantDiseaseDetection({
       formData.append("file", file);
 
       const predictionResponse = await fetch(
-        "https://owns-artists-pill-occasions.trycloudflare.com/predict-plant",
+        "https://unlike-reid-consequently-program.trycloudflare.com/predict-plant",
         {
           method: "POST",
           body: formData,
@@ -113,7 +113,7 @@ export default function PlantDiseaseDetection({
       // 2. Send model output and farmer-provided context
       // to the central evidence validation engine.
       const validationResponse = await fetch(
-        "https://owns-artists-pill-occasions.trycloudflare.com/validate-evidence",
+        "https://unlike-reid-consequently-program.trycloudflare.com/validate-evidence",
         {
           method: "POST",
           headers: {
